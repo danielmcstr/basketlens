@@ -54,7 +54,8 @@ apresentação: clareza, domínio técnico e participação de todos (10).
 | Recurso | Link |
 |:---|:---|
 | Página oficial (dunnhumby Source Files) | https://www.dunnhumby.com/source-files/ |
-| User guide oficial (PDF) | https://assets.ctfassets.net/psj0p18eh7z1/2SYO8T89Pxfd65nr6HQEbR/ce6c475e1bf15d503141bbd1fcc3b0a2/Let_s-Get-Sort-of-Real-User-Guide-dunnhumby.pdf |
+| The Complete Journey User Guide (cópia local no repositório) | [docs/dunnhumby_The-Complete-Journey-User-Guide.pdf](../docs/dunnhumby_The-Complete-Journey-User-Guide.pdf) |
+| User guide oficial relacionado (Let's get sort-of-real, PDF) | https://assets.ctfassets.net/psj0p18eh7z1/2SYO8T89Pxfd65nr6HQEbR/ce6c475e1bf15d503141bbd1fcc3b0a2/Let_s-Get-Sort-of-Real-User-Guide-dunnhumby.pdf |
 | Espelho no Kaggle (TCJ) | https://www.kaggle.com/datasets/frtgnn/dunnhumby-the-complete-journey |
 | Reconstrução de referência (R/Python) | https://github.com/bradleyboehmke/completejourney |
 
@@ -68,10 +69,10 @@ The Complete Journey — é um dataset irmão, de dados dummies, do mesmo progra
 
 O **The Complete Journey User Guide** (o dicionário que corresponde ao nosso case,
 com `household_key`, `DAY`, `WEEK_NO`, `BASKET_ID`, `hh_demographic`, `campaign_desc`,
-`coupon`, `coupon_redempt`, `causal_data`) circula em espelhos como Scribd e pdfcoffee,
-e o conteúdo é reproduzido fielmente na documentação dos pacotes R `completejourney`
-e Python `completejourney_py`. **Ação do grupo:** baixar o guia do The Complete Journey
-e anexá-lo ao trabalho, creditando a dunnhumby/84.51°.
+`coupon`, `coupon_redempt`, `causal_data`) agora está incluído neste repositório em
+`docs/dunnhumby_The-Complete-Journey-User-Guide.pdf` e é a referência adotada neste
+draft para os campos do dataset e para a modelagem discutida ao longo do documento,
+mantendo o crédito à dunnhumby/84.51°.
 
 ### Tamanho e grão dos arquivos (The Complete Journey — oficial)
 
@@ -599,7 +600,7 @@ Para a entrega acadêmica do Case 7, o grupo opera com ferramentas gratuitas e c
 
 Checklist sugerido:
 
-- [ ] Baixar a base (fonte oficial ou espelho Kaggle) e o TCJ User Guide.
+- [ ] Baixar a base (fonte oficial ou espelho Kaggle); TCJ User Guide já anexado em `docs/dunnhumby_The-Complete-Journey-User-Guide.pdf`.
 - [ ] Ler a licença e citar a dunnhumby no trabalho.
 - [ ] Confirmar contas: Atlas M0 (feito), Redis Cloud 30 MB, Cassandra (Docker vs Astra).
 - [ ] Definir o recorte: 6 meses de transações, perfis completos, campanhas ativas.
@@ -628,7 +629,7 @@ Checklist sugerido:
 ## 11. Referências
 
 - dunnhumby. *Source Files / The Complete Journey*. https://www.dunnhumby.com/source-files/
-- dunnhumby. *The Complete Journey User Guide* (dicionário oficial do dataset).
+- dunnhumby. *The Complete Journey User Guide* (dicionário oficial do dataset). `docs/dunnhumby_The-Complete-Journey-User-Guide.pdf`.
 - dunnhumby. *Let's get sort-of-real: User guide* (PDF oficial relacionado).
 - BOEHMKE, Bradley; MORTIMER, Stephen. *completejourney: Retail Shopping Data*. R package version 1.0.1, 2019.
 - CUNNINGHAM, Jason; BOEHMKE, Bradley. *completejourney_py: An open-source Python package for retail analytics*. 2021.
