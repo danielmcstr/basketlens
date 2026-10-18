@@ -2,7 +2,7 @@
 
 - [x] 1.1 Atualizar a Seção 3.2 e a Seção 5.1 de `docs/DRAFT.md` com as colunas reais de `hh_demographic.csv` (`classification_1..5`, `HOMEOWNER_DESC`, `KID_CATEGORY_DESC`, `household_key`), seus significados ordinais conforme a página 4 do PDF oficial e a estratégia de 2.500 documentos na coleção `households` (801 com subdocumento `demographics` e 1.699 sem o campo)
 - [x] 1.2 Corrigir a Seção 3.4 e a Seção 5.2 de `docs/DRAFT.md` alterando os tipos de `display_type` e `mailer_page` na tabela CQL `causal_promotions_by_store_week` de `int` para `text` (conforme códigos alfanuméricos da página 6 do PDF)
-- [ ] 1.3 Atualizar as Seções 4, 5.3, 9 e 10 de `docs/DRAFT.md` registrando a infraestrutura 100% Docker Compose local com Web UIs dedicadas, o motor de ingestão via Polars (`scan_csv` / `read_csv_batched`, sem carregar o dataset inteiro em RAM), os dois modos operacionais (**Modo A: Ingestão Completa** e **Modo B: Event Replay Dia a Dia** com `REFERENCE_DAY = 650` para o estudo de caso `household_key = 208`) e a estrutura dos 4 notebooks
+- [x] 1.3 Atualizar as Seções 4, 5.3, 9 e 10 de `docs/DRAFT.md` registrando a infraestrutura 100% Docker Compose local com Web UIs dedicadas, o motor de ingestão via Polars (`scan_csv` / `read_csv_batched`, sem carregar o dataset inteiro em RAM), os dois modos operacionais (**Modo A: Ingestão Completa** e **Modo B: Event Replay Dia a Dia** com `REFERENCE_DAY = 650` para o estudo de caso `household_key = 208`) e a estrutura dos 4 notebooks
 
 ## 2. Configuração do Pacote Python e Ambiente `.venv`
 
