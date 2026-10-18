@@ -169,9 +169,9 @@ Conforme a página 4 do guia oficial (`docs/dunnhumby_The-Complete-Journey-User-
 - `coupon` (124.548): `CAMPAIGN`, `COUPON_UPC`, `PRODUCT_ID`.
 - `coupon_redempt` (2.318): `household_key`, `DAY`, `COUPON_UPC`, `CAMPAIGN`.
 - `causal_data` (3.678.652): `PRODUCT_ID`, `STORE_ID`, `WEEK_NO`, `display`, `mailer`.
-  * `display`: código da posição física do produto na loja (ex.: `0` = gôndola comum, `1` = ponta de gôndola/*end-cap*, `2` = ilha promocional intermediária, `7` = checkout frontal).
-  * `mailer`: código de posicionamento em mídia impressa / tabloides da semana (página do encarte).
-  * *Uso analítico:* mensurar a elasticidade de preço e o aumento de demanda (*lift*) causado pelo destaque visual no PDV.
+  * `display` (**código alfanumérico `text`**, pág. 6 do PDF): posição física promocional na loja — `'0'` (sem display), `'1'` (store front), `'2'` (store rear), `'3'` (front end cap), `'4'` (mid-aisle end cap), `'5'` (rear end cap), `'6'` (side aisle end cap), `'7'` (in-aisle), `'9'` (secondary location display), `'A'` (in-shelf).
+  * `mailer` (**código alfanumérico `text`**, pág. 6 do PDF): posicionamento no tabloide/encarte semanal — `'0'` (not on ad), `'A'` (interior page feature), `'C'` (interior page line item), `'D'` (front page feature), `'F'` (back page feature), `'H'` (wrap front feature), `'J'` (wrap interior coupon), `'L'` (wrap back feature), `'P'` (interior page coupon), `'X'` (free on interior page), `'Z'` (free on front/back page or wrap).
+  * *Uso analítico:* mensurar a elasticidade de preço e o aumento de demanda (*lift*) causado pelo destaque visual no PDV e no encarte.
 
 ---
 
@@ -341,8 +341,8 @@ CREATE TABLE causal_promotions_by_store_week (
   store_id     int,
   week_no      int,
   product_id   int,
-  display_type int,
-  mailer_page  int,
+  display_type text,
+  mailer_page  text,
   PRIMARY KEY ((store_id, week_no), product_id)
 );
 ```
@@ -358,7 +358,9 @@ CREATE TABLE causal_promotions_by_store_week (
 - `sales_by_product_week`: agregação independente do domicílio → partição por produto.
 - `causal_promotions_by_store_week`: chave de partição composta `(store_id, week_no)` isola
   toda a disposição física da loja em uma semana em um único nó, permitindo escanear todos os
-  destaques de gôndola e encartes em O(1), ordenados por `product_id`.
+  destaques de gôndola e encartes em O(1), ordenados por `product_id`. As colunas `display_type`
+  e `mailer_page` são definidas como `text` porque o arquivo `causal_data.csv` (pág. 6 do PDF oficial)
+  emprega códigos alfanuméricos como `'A'`, `'D'` e `'Z'`.
 
 **Antipadrão a explicar na apresentação:** uma consulta que **não** informe a chave de
 partição vira varredura em todos os nós (`ALLOW FILTERING`, *full scan*) — o motivo pelo
