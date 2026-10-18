@@ -141,16 +141,20 @@ Como o objetivo acadêmico é exercitar conceitos e desafios de **Big Data**, o 
 
 ### 3.2 `hh_demographic` — perfil (801 linhas)
 
-| Coluna | Descrição |
-|:---|:---|
-| `household_key` | Identifica o domicílio |
-| `AGE_DESC` | Faixa de idade |
-| `MARITAL_STATUS_CODE` | Estado civil (A/Coded) |
-| `INCOME_DESC` | Faixa de renda (ex.: `50-74K`) |
-| `HOMEOWNER_DESC` | Proprietário / inquilino |
-| `HH_COMP_DESC` | Composição do domicílio |
-| `HOUSEHOLD_SIZE_DESC` | Tamanho (até 5+) |
-| `KID_CATEGORY_DESC` | Nº de crianças (até 3+) |
+Conforme a página 4 do guia oficial (`docs/dunnhumby_The-Complete-Journey-User-Guide.pdf`) e o cabeçalho real de `dataset/hh_demographic.csv`, cinco atributos demográficos foram anonimizados pela dunnhumby como variáveis ordinais (`classification_1` a `classification_5`):
+
+| Coluna no CSV / PDF | Papel Semântico (`alias`) | Domínio Ordinal (conforme PDF, pág. 4) | Descrição |
+|:---|:---|:---|:---|
+| `household_key` | `household_key` | `1..2500` (801 presentes) | Identifica unicamente o domicílio |
+| `classification_1` | `age_group` (`AGE_DESC`) | `Age Group1` a `Age Group6` | Faixa de idade estimada |
+| `classification_2` | `marital_code` (`MARITAL_STATUS_CODE`) | `X`, `Y`, `Z` | Estado civil codificado (3 categorias) |
+| `classification_3` | `income_level` (`INCOME_DESC`) | `Level1` a `Level12` | Faixa socioeconômica / renda estimada (12 níveis ordinais) |
+| `HOMEOWNER_DESC` | `homeowner_desc` | `Homeowner`, `Renter`, `Probable Owner`, `Probable Renter`, `Unknown` | Condição de moradia (proprietário / inquilino) |
+| `classification_4` | `household_size` (`HOUSEHOLD_SIZE_DESC`) | `1`, `2`, `3`, `4`, `5+` | Tamanho do domicílio (nº de pessoas, até `5+`) |
+| `classification_5` | `hh_comp_group` (`HH_COMP_DESC`) | `Group1` a `Group6` | Composição familiar codificada (6 grupos) |
+| `KID_CATEGORY_DESC` | `kid_category_desc` | `1`, `2`, `3+`, `None/Unknown` | Número de crianças no domicílio (até `3+`) |
+
+> **Polimorfismo e cobertura na coleção `households` (2.500 domicílios):** Todas as **2.500 famílias** que transacionam em `transaction_data.csv` são armazenadas na coleção `households` do MongoDB. Apenas as **801 famílias** presentes em `hh_demographic.csv` recebem o subdocumento `demographics`; as **1.699 famílias restantes** não possuem o campo `demographics` (esquema flexível sem colunas `NULL`), mantendo `behavior_summary`, `recent_baskets` e `campaigns_received`.
 
 ### 3.3 `product` — catálogo (92.353 linhas)
 
@@ -224,21 +228,29 @@ A resposta ancora-se em quatro fundamentos de engenharia de dados:
 
 ### 5.1 MongoDB — collection `households`
 
-Um documento por `household_key`. Aplica três padrões nomeados ensinados na disciplina
-(`subset`, `extended reference`, `bucket`):
+ A coleção `households` armazena **todos os 2.500 domicílios** da base (`1` documento por `household_key`):
+- **801 documentos completos** (presentes em `hh_demographic.csv`) incluem o subdocumento `demographics` com os códigos ordinais oficiais (`classification_1` a `classification_5`, `homeowner_desc`, `kid_category_desc`) e seus significados semânticos (`age_group`, `marital_code`, `income_level`, `household_size`, `hh_comp_group`).
+- **1.699 documentos comportamentais** (ausentes em `hh_demographic.csv`) **omitem** a chave `demographics`, demonstrando na prática o polimorfismo e o esquema flexível do modelo documental (sem `NULL`s espalhados) e garantindo que `build_360_view(household_key)` funcione para qualquer cliente do programa.
+
+Aplica três padrões nomeados ensinados na disciplina (`subset`, `extended reference`, `computed / summary`):
 
 ```json
 {
   "_id": ObjectId("..."),
   "household_key": 208,
   "demographics": {
-    "age_desc": "45-54",
-    "income_desc": "50-74K",
-    "marital_status_code": "A",
+    "classification_1": "Age Group4",
+    "classification_2": "Y",
+    "classification_3": "Level5",
     "homeowner_desc": "Homeowner",
-    "hh_comp_desc": "2 Adults No Kids",
-    "household_size_desc": "2",
-    "kid_category_desc": "None"
+    "classification_4": "2",
+    "classification_5": "Group5",
+    "kid_category_desc": "None/Unknown",
+    "age_group": "Age Group4",
+    "marital_code": "Y",
+    "income_level": "Level5",
+    "household_size": "2",
+    "hh_comp_group": "Group5"
   },
   "behavior_summary": {
     "total_spend": 4123.77,
@@ -263,7 +275,7 @@ Um documento por `household_key`. Aplica três padrões nomeados ensinados na di
       ]
     }
   ],
-  "campaigns_received": [18, 22, 26]
+  "campaigns_received": [8, 13, 17, 18, 22, 26, 29, 30]
 }
 ```
 
@@ -271,14 +283,14 @@ Um documento por `household_key`. Aplica três padrões nomeados ensinados na di
   histórico completo vive no Cassandra. Consistência intencional e documentada.
 - **`items[]`** usa **extended reference**: copia `commodity_desc`/`department` no
   momento (o catálogo `product` é a fonte, mas a tela de 360º não deve fazer join).
-- **`behavior_summary`** é um resumo materializado (RFM-ish), recalculado por um job
-  a partir do Cassandra.
+- **`behavior_summary`** é um resumo materializado (RFM-ish), calculado na ingestão via
+  Polars streaming e atualizado incrementalmente no modo de Event Replay.
 
 Índices previstos (com prova via `explain("executionStats")`):
 
 ```javascript
 db.households.createIndex({ household_key: 1 }, { unique: true })
-db.households.createIndex({ "demographics.income_desc": 1, "demographics.age_desc": 1 })
+db.households.createIndex({ "demographics.classification_1": 1, "demographics.classification_3": 1 })
 db.households.createIndex({ "behavior_summary.avg_weekly_spend": -1 })
 ```
 
