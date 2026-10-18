@@ -15,4 +15,4 @@
 
 - [x] 3.1 Criar a árvore de pacotes `src/basketlens/__init__.py` e implementar `src/basketlens/config.py` com `Settings` (`pydantic-settings`) e helper `get_settings()`
 - [x] 3.2 Criar `tests/test_config.py` validando os valores padrão de `Settings`, resolução de caminhos de `dataset/` e sobrescrita por variáveis de ambiente (`BASKETLENS_REFERENCE_DAY`, `BASKETLENS_SECONDS_PER_DAY`)
-- [ ] 3.3 Executar `pytest` dentro do `.venv` para confirmar que o ambiente e a configuração estão 100% funcionais
+- [x] 3.3 Executar `pytest` dentro do `.venv` para confirmar que o ambiente e a configuração estão 100% funcionais
