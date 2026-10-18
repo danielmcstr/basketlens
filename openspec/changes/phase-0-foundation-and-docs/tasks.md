@@ -9,7 +9,7 @@
 - [x] 2.1 Atualizar `.gitignore` garantindo exclusão de `.venv/`, `.env`, `__pycache__/`, `.pytest_cache/`, `.ipynb_checkpoints/` e volumes de dados locais
 - [x] 2.2 Criar `pyproject.toml` com metadados do pacote `basketlens` (`src/` layout) e dependências pinadas (`polars`, `pymongo`, `cassandra-driver`, `redis`, `pydantic`, `pydantic-settings`, `jupyterlab`, `ipykernel`, `pytest`)
 - [x] 2.3 Criar `.env.example` documentando todas as variáveis `BASKETLENS_*` para conexões locais (MongoDB, Cassandra, Redis), diretório `dataset/` e parâmetros de simulação (`REFERENCE_DAY=650`, `SECONDS_PER_DAY=5`, `PROFILE_TTL_SECONDS=60`)
-- [ ] 2.4 Criar o ambiente virtual `.venv` e instalar o pacote `basketlens` em modo editável (`pip install -e ".[dev]"`)
+- [x] 2.4 Criar o ambiente virtual `.venv` e instalar o pacote `basketlens` em modo editável (`pip install -e ".[dev]"`)
 
 ## 3. Módulo de Configuração Tipada e Verificação
 
