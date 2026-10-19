@@ -1,6 +1,6 @@
 ## 1. Infraestrutura Docker Compose com Versões Pinadas e Web UIs
 
-- [ ] 1.1 Criar `docker-compose.yml` com os serviços `mongo:8.0.4` (`27017`), `cassandra:5.0.2` (`9042`, com heap ajustado e healthcheck CQL) e `redis:7.4.2-alpine` (`6379`), volumes nomeados e rede dedicada
+- [x] 1.1 Criar `docker-compose.yml` com os serviços `mongo:8.0.4` (`27017`), `cassandra:5.0.2` (`9042`, com heap ajustado e healthcheck CQL) e `redis:7.4.2-alpine` (`6379`), volumes nomeados e rede dedicada
 - [ ] 1.2 Adicionar ao `docker-compose.yml` as 3 interfaces gráficas pré-configuradas: `mongo-express:1.0.2-20-alpine3.19` (`8081`), `delermando/cassandra-web:0.4.0` (`3000`) e `rediscommander/redis-commander:latest` (`8082`) dependentes do healthcheck de seus respectivos bancos
 - [ ] 1.3 Subir os containers (`docker compose up -d`) e verificar que os 3 bancos ficam `healthy` e as 3 Web UIs respondem via HTTP
 
