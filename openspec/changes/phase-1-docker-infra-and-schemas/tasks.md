@@ -13,7 +13,7 @@
 
 - [x] 3.1 Implementar `src/basketlens/schemas/mongo_schema.py` com `ensure_mongo_indexes(db)` (criando índices em `household_key`, `demographics.classification_1` + `demographics.classification_3` e `behavior_summary.avg_weekly_spend`) e helper `explain_query(collection, filter_doc)`
 - [x] 3.2 Implementar `src/basketlens/schemas/cassandra_schema.py` com `ensure_cassandra_schema(session)` criando o keyspace `basketlens` e as 4 tabelas CQL (`transactions_by_household`, `transactions_by_household_product`, `sales_by_product_week`, `causal_promotions_by_store_week` com `display_type text` e `mailer_page text`)
-- [ ] 3.3 Implementar `src/basketlens/schemas/redis_schema.py` com construtores padronizados de chaves (`campanha:{id}`, `cupom:{upc}`, `household:{id}:campaigns`, `household:{id}:coupons`, `profile:{id}`, `ranking:week:{w}`, `store:{id}:week:{w}:displays`) e helper de limpeza por namespace
+- [x] 3.3 Implementar `src/basketlens/schemas/redis_schema.py` com construtores padronizados de chaves (`campanha:{id}`, `cupom:{upc}`, `household:{id}:campaigns`, `household:{id}:coupons`, `profile:{id}`, `ranking:week:{w}`, `store:{id}:week:{w}:displays`) e helper de limpeza por namespace
 - [ ] 3.4 Criar `src/basketlens/schemas/__init__.py` expondo `initialize_all_schemas()` para provisionar MongoDB e Cassandra em uma única chamada
 
 ## 4. Verificação Automatizada da Infraestrutura e Schemas
