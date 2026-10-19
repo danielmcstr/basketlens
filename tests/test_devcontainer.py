@@ -16,7 +16,7 @@ def test_devcontainer_json_structure_and_codespaces_requirements() -> None:
 
     config = json.loads(devcontainer_path.read_text(encoding="utf-8"))
 
-    assert config.get("image") == "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm"
+    assert config.get("image") == "mcr.microsoft.com/devcontainers/python:3-3.12-bookworm"
 
     features = config.get("features", {})
     dind_cfg = features.get("ghcr.io/devcontainers/features/docker-in-docker:2")

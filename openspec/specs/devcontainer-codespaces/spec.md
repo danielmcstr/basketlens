@@ -9,7 +9,7 @@ The repository SHALL provide a `.devcontainer/devcontainer.json` file that provi
 
 #### Scenario: Docker-in-Docker and Git LFS features are declared
 - **WHEN** a developer or automated test inspects `.devcontainer/devcontainer.json`
-- **THEN** it MUST specify `mcr.microsoft.com/devcontainers/python:1-3.12-bookworm` as the base image, include `ghcr.io/devcontainers/features/docker-in-docker:2` (with `dockerDashComposeVersion: "v2"`) and `ghcr.io/devcontainers/features/git-lfs:1` (with `autoPull: true`), and declare `hostRequirements` with at least `2` CPUs, `"8gb"` memory, and `"32gb"` storage
+- **THEN** it MUST specify `mcr.microsoft.com/devcontainers/python:3-3.12-bookworm` as the base image, include `ghcr.io/devcontainers/features/docker-in-docker:2` (with `dockerDashComposeVersion: "v2"`) and `ghcr.io/devcontainers/features/git-lfs:1` (with `autoPull: true`), and declare `hostRequirements` with at least `2` CPUs, `"8gb"` memory, and `"32gb"` storage
 
 #### Scenario: All 6 polyglot ports are forwarded and labeled for classroom demonstration
 - **WHEN** the Codespace is launched from `.devcontainer/devcontainer.json`
