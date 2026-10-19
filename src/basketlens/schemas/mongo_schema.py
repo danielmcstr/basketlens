@@ -53,7 +53,13 @@ def explain_query(
     filter_doc: dict[str, Any],
     sort_spec: list[tuple[str, int]] | None = None,
 ) -> dict[str, Any]:
-    """Execute `explain('executionStats')` for a query on the given MongoDB collection."""
+    """Execute `explain('executionStats')` for a query on the given MongoDB collection.
+
+    Database Interaction:
+        explain_query(filter, sort) ──► [MongoDB db.households]
+                                          └──► .find(filter).sort(sort).explain("executionStats")
+                                          ◄─── Retorna stage = "EXPRESS_IXSCAN" | "IXSCAN" (0 ms)
+    """
     command_spec: dict[str, Any] = {
         "find": collection.name,
         "filter": filter_doc,

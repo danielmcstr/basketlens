@@ -303,7 +303,19 @@ def ingest_redis_state(
     client: redis.Redis | None = None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Ingest active campaigns, coupons, household eligibility, and weekly showcases into Redis."""
+    """Ingest active campaigns, coupons, household eligibility, and weekly showcases into Redis.
+
+    Database Interaction:
+        [CSVs: campaign_desc, campaign_table, coupon, coupon_redempt, transaction, causal]
+           └──► Polars Lazy Filter (vigentes em reference_day)
+                  └──► [Redis Pipeline em Memória]
+                         ├── HSET + EXPIRE  campanha:{id}               (TTL proporcional à vigência)
+                         ├── SADD + EXPIRE  campanha:{id}:coupons       (cupons da campanha ativa)
+                         ├── HSET + EXPIRE  cupom:{upc}                 (regras e contagem de SKUs)
+                         ├── SADD + EXPIRE  household:{id}:campaigns    (campanhas ativas do domicílio)
+                         ├── SADD + EXPIRE  household:{id}:coupons      (cupons disponíveis não resgatados)
+                         └── ZADD / SADD    ranking:week:{w} & store:{id}:week:{w}:displays
+    """
     cfg = settings or get_settings()
     ref_day = reference_day if reference_day is not None else cfg.reference_day
     sec_per_day = seconds_per_day if seconds_per_day is not None else cfg.seconds_per_day

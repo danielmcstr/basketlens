@@ -32,7 +32,21 @@ def build_360_view(
     redis_client: redis.Redis | None = None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Assemble the complete Customer 360º view across Redis (Cache-Aside + TTL), MongoDB, and Cassandra."""
+    """Assemble the complete Customer 360º view across Redis (Cache-Aside + TTL), MongoDB, and Cassandra.
+
+    Database Interaction:
+        build_360_view(household_key=208)
+          │
+          ├──► 1. [Redis] GET profile:208
+          │         ├─► Cache Hit  : Retorna JSON da RAM (< 0.5 ms, source="redis")
+          │         └─► Cache Miss : Consulta [MongoDB] find_one({household_key: 208})
+          │                          e grava [Redis] SETEX profile:208 60 <json>
+          │
+          ├──► 2. [Cassandra] SELECT ... FROM transactions_by_household WHERE household_key = 208 LIMIT N
+          │                   (leitura O(1) no topo da partição ordenada por week_no DESC, day DESC)
+          │
+          └──► 3. [Redis]     SMEMBERS household:208:campaigns + TTL/HGETALL campanha:{id} (TTL > 0)
+    """
     cfg = settings or get_settings()
     ttl_sec = profile_ttl_seconds if profile_ttl_seconds is not None else cfg.profile_ttl_seconds
     t0 = time.perf_counter()
@@ -152,7 +166,13 @@ def benchmark_cache_aside_latency(
     iterations: int = 15,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Benchmark profile lookup latency comparing Cold Cache Miss (MongoDB) vs. Warm Cache Hit (Redis)."""
+    """Benchmark profile lookup latency comparing Cold Cache Miss (MongoDB) vs. Warm Cache Hit (Redis).
+
+    Database Interaction:
+        Iteração 1..N:
+          ├── Cold Cache Miss : [Redis] DEL profile:208 ──► [MongoDB] find_one() ──► [Redis] SETEX
+          └── Warm Cache Hit  : [Redis] GET profile:208 ──► Retorno direto da RAM (Speedup ~3.2x a 6.8x)
+    """
     cfg = settings or get_settings()
     mongo_client = get_mongo_client(settings=cfg)
     db = get_mongo_db(settings=cfg, client=mongo_client)

@@ -135,7 +135,14 @@ def prepare_replay_baseline(
     redis_client: redis.Redis | None = None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Prepare the baseline state across MongoDB, Cassandra, and Redis up to `cutoff_day`."""
+    """Prepare the baseline state across MongoDB, Cassandra, and Redis up to `cutoff_day`.
+
+    Database Interaction:
+        prepare_replay_baseline(cutoff_day=649)
+          ├──► [Cassandra] TRUNCATE nas 4 tabelas + carrega eventos até DAY <= 649
+          ├──► [MongoDB]   Reconstrói 2.500 perfis acumulados até DAY <= 649 (John Smith: last_day=647)
+          └──► [Redis]     Sincroniza campanhas ativas em DAY=649 (Campanha 22 TTL=35s) + DEL profile:*
+    """
     cfg = settings or get_settings()
     t0 = time.perf_counter()
 
@@ -593,7 +600,23 @@ def replay_day(
     redis_client: redis.Redis | None = None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Simulate a single operational day (`DAY == day`) across Redis, Cassandra, and MongoDB."""
+    """Simulate a single operational day (`DAY == day`) across Redis, Cassandra, and MongoDB.
+
+    Database Interaction:
+        [Polars scan_csv().filter(DAY == D)]
+                │
+                ├──► PASSO 1 [Redis]     : Recalcula TTL = (END_DAY - D) * 5s, remove vencidas e
+                │                          baixa cupons resgatados: SREM household:{id}:coupons
+                │
+                ├──► PASSO 2 [Cassandra] : INSERT (UNLOGGED BATCH) das compras do dia D em:
+                │                          transactions_by_household, transactions_by_household_product,
+                │                          sales_by_product_week
+                │
+                ├──► PASSO 3 [MongoDB]   : UpdateOne nos clientes do dia D:
+                │                          $inc (total_spend, total_baskets) + $push recent_baskets ($slice: -5)
+                │
+                └──► PASSO 4 [Redis]     : DEL profile:{household_key} (invalida Cache-Aside!)
+    """
     cfg = settings or get_settings()
     t0 = time.perf_counter()
 
@@ -757,7 +780,12 @@ def replay_range(
     prime_watched_cache_each_day: bool = False,
     settings: Settings | None = None,
 ) -> list[dict[str, Any]]:
-    """Replay a contiguous window of operational days (`start_day..end_day`) with telemetry."""
+    """Replay a contiguous window of operational days (`start_day..end_day`) with telemetry.
+
+    Database Interaction:
+        replay_range(650..657) ──► Executa replay_day(650) ──► ... ──► replay_day(654: resgate)
+                                                                 ──► replay_day(657: TTL expira)
+    """
     if end_day < start_day:
         raise ValueError(f"end_day ({end_day}) must be >= start_day ({start_day})")
 
@@ -815,7 +843,14 @@ def restore_full_historical_state(
     watch_households: Sequence[int] = (208,),
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Restore full historical state up to `cutoff_day = 711` and Redis `reference_day = 650`."""
+    """Restore full historical state up to `cutoff_day = 711` and Redis `reference_day = 650`.
+
+    Database Interaction:
+        restore_full_historical_state()
+          ├──► [MongoDB]   Reconstrói os 2.500 domicílios até cutoff_day = 711
+          ├──► [Cassandra] Reinsere as transações completas dos clientes monitorados
+          └──► [Redis]     Reexecuta ingest_redis_state(reference_day=650)
+    """
     cfg = settings or get_settings()
     mongo_stats = ingest_mongo_households(cutoff_day=cutoff_day, settings=cfg)
 

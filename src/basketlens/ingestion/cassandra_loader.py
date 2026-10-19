@@ -514,7 +514,16 @@ def ingest_cassandra_data(
     session: Session | None = None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Orchestrate batched ingestion into all 4 Cassandra query-driven tables."""
+    """Orchestrate batched ingestion into all 4 Cassandra query-driven tables.
+
+    Database Interaction:
+        [transaction_data.csv + causal_data.csv] ──► Polars read_csv_batched / scan_csv
+          └──► [Apache Cassandra keyspace basketlens] (Prepared Statements + UNLOGGED BATCH)
+                 ├── 1. transactions_by_household         ((household_key), week_no DESC, day DESC)
+                 ├── 2. transactions_by_household_product ((household_key, product_id), day DESC)
+                 ├── 3. sales_by_product_week             ((product_id), week_no DESC)
+                 └── 4. causal_promotions_by_store_week   ((store_id, week_no), product_id ASC)
+    """
     cfg = settings or get_settings()
     owns_cluster = session is None
     cluster = None

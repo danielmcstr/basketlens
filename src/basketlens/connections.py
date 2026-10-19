@@ -113,7 +113,13 @@ def get_redis_client(
 
 
 def check_all_connections(settings: Settings | None = None) -> dict[str, bool]:
-    """Execute a ping/heartbeat against MongoDB, Cassandra, and Redis."""
+    """Execute a ping/heartbeat against MongoDB, Cassandra, and Redis.
+
+    Database Interaction:
+        ┌───► [MongoDB :27017]   ── admin.command("ping") ─────────► True
+        ├───► [Cassandra :9042]  ── SELECT release_version (local) ► True
+        └───► [Redis :6379]      ── PING ──────────────────────────► True
+    """
     cfg = settings or get_settings()
     status: dict[str, bool] = {
         "mongodb": False,

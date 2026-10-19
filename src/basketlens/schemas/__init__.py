@@ -35,7 +35,13 @@ from basketlens.schemas.redis_schema import (
 
 
 def initialize_all_schemas() -> dict[str, Any]:
-    """Provision MongoDB indexes, Cassandra keyspace/tables, and verify Redis readiness."""
+    """Provision MongoDB indexes, Cassandra keyspace/tables, and verify Redis readiness.
+
+    Database Interaction:
+        ┌───► [MongoDB]   ── Cria 3 índices B-Tree em db.households (unique + compostos)
+        ├───► [Cassandra] ── CREATE KEYSPACE basketlens + 4 tabelas CQL por consulta
+        └───► [Redis]     ── Valida conexão (chaves efêmeras criadas sob demanda c/ TTL)
+    """
     mongo_indexes = ensure_mongo_indexes()
     cassandra_tables = ensure_cassandra_schema()
     redis_client = get_redis_client()

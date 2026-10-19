@@ -26,7 +26,23 @@ def run_full_ingestion(
     include_weekly_showcases: bool = True,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Provision schemas and execute coordinated ingestion across MongoDB, Cassandra, and Redis."""
+    """Provision schemas and execute coordinated ingestion across MongoDB, Cassandra, and Redis.
+
+    Database Interaction:
+        [8 CSVs dunnhumby] ──► Polars scan_csv(streaming=True) / read_csv_batched(50_000)
+                                 │
+                                 ├──► 1. ingest_mongo_households() ──► [MongoDB db.households]
+                                 │       • Upsert em lote (bulk_write) dos 2.500 domicílios
+                                 │       • 801 c/ demographics + 1.699 sem demographics
+                                 │       • behavior_summary (RFM) + recent_baskets ($slice: -5)
+                                 │
+                                 ├──► 2. ingest_cassandra_data()   ──► [Cassandra keyspace basketlens]
+                                 │       • Prepared Statements + UNLOGGED BATCH por partição
+                                 │       • Popula as 4 tabelas CQL orientadas à consulta
+                                 │
+                                 └──► 3. ingest_redis_state()      ──► [Redis Pipeline em Memória]
+                                         • Popula campanhas/cupons ativos em reference_day c/ TTL
+    """
     cfg = settings or get_settings()
     t0 = time.perf_counter()
 

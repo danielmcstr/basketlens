@@ -61,7 +61,15 @@ def get_household_profile_and_recent_history(
     session: Session | None = None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Answer Business Question 1: MongoDB 360º profile + Cassandra ordered recent transactions."""
+    """Answer Business Question 1: MongoDB 360º profile + Cassandra ordered recent transactions.
+
+    Database Interaction:
+        get_household_profile_and_recent_history(208)
+          ├──► [MongoDB]   db.households.find_one({household_key: 208})
+          │                (demographics + behavior_summary + recent_baskets)
+          └──► [Cassandra] SELECT * FROM transactions_by_household
+                           WHERE household_key = 208 LIMIT N (partição já ordenada)
+    """
     cfg = settings or get_settings()
     t0 = time.perf_counter()
 
@@ -142,7 +150,14 @@ def get_household_product_history(
     session: Session | None = None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Query `transactions_by_household_product` by composite partition key `(household_key, product_id)`."""
+    """Query `transactions_by_household_product` by composite partition key `(household_key, product_id)`.
+
+    Database Interaction:
+        get_household_product_history(208, 1017772)
+          └──► [Cassandra] SELECT * FROM transactions_by_household_product
+                           WHERE household_key = 208 AND product_id = 1017772
+                           (chave composta ((household_key, product_id)) em O(1))
+    """
     cfg = settings or get_settings()
     t0 = time.perf_counter()
     owns_cassandra = session is None
@@ -198,7 +213,16 @@ def get_active_campaigns_for_household(
     redis_client: redis.Redis | None = None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Answer Business Question 2: Active campaigns and coupons with `TTL > 0` in Redis."""
+    """Answer Business Question 2: Active campaigns and coupons with `TTL > 0` in Redis.
+
+    Database Interaction:
+        get_active_campaigns_for_household(208)
+          └──► [Redis em Memória]
+                 ├── SMEMBERS household:208:campaigns ──► ids candidatos
+                 ├── TTL/HGETALL campanha:{id} (filtra campanhas com TTL > 0)
+                 └── Intersecta household:208:coupons ∩ campanha:{id}:coupons
+                     ──► HGETALL cupom:{upc} (retorna os 21 cupons ativos, ex: 51800000050)
+    """
     cfg = settings or get_settings()
     t0 = time.perf_counter()
     owns_redis = redis_client is None
@@ -286,7 +310,19 @@ def get_avg_weekly_spend_by_demographic(
     session: Session | None = None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Answer Business Question 3: Average weekly spend by demographic group across the 801 profiles."""
+    """Answer Business Question 3: Average weekly spend by demographic group across the 801 profiles.
+
+    Database Interaction:
+        get_avg_weekly_spend_by_demographic("classification_1" | "classification_3")
+          │
+          ├──► 1. [MongoDB]   db.households.find({demographics.<field>: {$exists: true}})
+          │                   via índice idx_demographics_class1_class3 (801 chaves, zero COLLSCAN)
+          │
+          ├──► 2. [Cassandra] execute_concurrent_with_args em transactions_by_household
+          │                   para as 801 partições (allow_filtering_used = False!)
+          │
+          └──► 3. [Agregação] Consolida gasto total, semanas ativas e gasto semanal médio ($)
+    """
     cfg = settings or get_settings()
     t0 = time.perf_counter()
 
@@ -432,7 +468,15 @@ def get_product_causal_promotion_lift(
     session: Session | None = None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Bonus Trade Marketing query: combine `sales_by_product_week` and `causal_promotions_by_store_week`."""
+    """Bonus Trade Marketing query: combine `sales_by_product_week` and `causal_promotions_by_store_week`.
+
+    Database Interaction:
+        get_product_causal_promotion_lift(product_id)
+          ├──► [Cassandra] SELECT * FROM sales_by_product_week WHERE product_id = ?
+          ├──► [Cassandra] execute_concurrent_with_args em causal_promotions_by_store_week
+          │                (detecta semanas COM vs. SEM display/mailer na gôndola/tabloide)
+          └──► Compara médias de venda semanal (ex: SKU 862349 -> Lift = +347,56%)
+    """
     cfg = settings or get_settings()
     t0 = time.perf_counter()
     owns_cassandra = session is None
@@ -603,7 +647,13 @@ def get_store_weekly_showcase(
     redis_client: redis.Redis | None = None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Bonus Trade Marketing query: read weekly commodity ranking ZSET and store display SET from Redis."""
+    """Bonus Trade Marketing query: read weekly commodity ranking ZSET and store display SET from Redis.
+
+    Database Interaction:
+        get_store_weekly_showcase(store_id=288, week_no=94)
+          ├──► [Redis] ZREVRANGE ranking:week:94 0 9 WITHSCORES ──► Top categorias ($)
+          └──► [Redis] SMEMBERS store:288:week:94:displays      ──► 100 SKUs em gôndola na loja
+    """
     cfg = settings or get_settings()
     t0 = time.perf_counter()
     owns_redis = redis_client is None

@@ -14,6 +14,21 @@ No varejo alimentar físico moderno, programas de fidelidade geram simultaneamen
 
 O **BasketLens 360º** resolve esse trilema por meio de uma arquitetura de **Persistência Poliglota**, onde cada família NoSQL assume exatamente a carga de trabalho para a qual foi projetada:
 
+```text
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                 RESPONSABILIDADES DE ARMAZENAMENTO DA PERSISTÊNCIA POLIGLOTA                    │
+├───────────────────────────────┬───────────────────────────────┬─────────────────────────────────┤
+│    MongoDB 8.0 (CP · Docs)    │ Apache Cassandra 5.0 (AP · Col)│      Redis 7.4 (AP · RAM)       │
+├───────────────────────────────┼───────────────────────────────┼─────────────────────────────────┤
+│ • Coleção `households` (2.500)│ • Keyspace `basketlens`       │ • Hashes `campanha:{id}` (TTL)  │
+│ • 801 c/ demografia (Polimorf)│ • `transactions_by_household` │ • Hashes `cupom:{upc}` (TTL)    │
+│ • 1.699 sem demografia        │ • `transactions_by_household_ │ • Sets `household:{id}:coupons` │
+│ • `recent_baskets` ($slice:-5)│    product` (histórico SKU)   │ • String `profile:{id}`         │
+│ • `behavior_summary` (RFM $inc│ • `sales_by_product_week`     │   (Cache-Aside SETEX 60s / DEL) │
+│ • 3 índices B-Tree (0 ms)     │ • `causal_promotions_by_store`│ • ZSet `ranking:week:{w}`       │
+└───────────────────────────────┴───────────────────────────────┴─────────────────────────────────┘
+```
+
 1. **Agregado do Perfil 360º (`MongoDB 8.0` · Documentos BSON · `CP`):** armazena os **2.500 domicílios** da base em documentos coesos (`households`), combinando **Esquema Polimórfico** (acomodando naturalmente os **801 domicílios** com demografia mapeada e os **1.699** sem demografia, sem colunas `NULL`), **Subset Pattern** (mantendo apenas as 5 cestas mais recentes em `recent_baskets` via `$slice: -5`), **Extended Reference Pattern** (itens enriquecidos com departamento e categoria) e **Computed Pattern** (`behavior_summary` atualizado incrementalmente via `$inc`).
 2. **Séries Temporais de Transações e Promoções Físicas (`Apache Cassandra 5.0` · Colunas Largas · `AP`):** absorve os eventos *append-only* de compras (`2,59 milhões` de linhas) e de exposição em display/tabloide (`36,78 milhões` de linhas) em **4 tabelas CQL modeladas pela consulta (*Query-Driven Modeling*)**, com ordenação física decrescente em disco (`CLUSTERING ORDER BY ... DESC`) e **zero uso de `ALLOW FILTERING`**.
 3. **Camada de Velocidade, Elegibilidade e Cache (`Redis 7.4` · Chave-Valor em RAM · `AP`):** governa em sub-milissegundo quais campanhas e cupons estão ativos **agora** através de **TTL nativo** proporcional à janela de vigência (`campanha:{id}`, `cupom:{upc}`, `household:{id}:campaigns`, `household:{id}:coupons`), além de acelerar a leitura do perfil 360º via padrão **Cache-Aside** (`profile:{id}`) com invalidação ativa (`DEL`) a cada nova compra.
@@ -48,9 +63,25 @@ O dataset oficial **dunnhumby — The Complete Journey** acompanha todas as comp
 ### 2.2 Três Armadilhas Reais do Dataset Descobertas na EDA (e Como o Projeto as Resolve)
 1. **Cobertura Demográfica Incompleta (801 vs. 2.500 domicílios):** Embora `2.500` famílias comprem ativamente em `transaction_data.csv`, apenas **801 (32,04%)** possuem cadastro em `hh_demographic.csv`. Em vez de descartar 68% dos clientes ou criar tabelas cheias de `NULL`, o MongoDB armazena todos os 2.500 documentos em `households` e embute o objeto `demographics` exclusivamente nos 801 domicílios mapeados.
 2. **Códigos Alfanuméricos em `causal_data.csv`:** As colunas `display` (`'0'..'9'`, `'A'`) e `mailer` (`'0'`, `'A'`, `'C'`, `'D'`, `'F'`, `'H'`, `'J'`, `'L'`, `'P'`, `'X'`, `'Z'`) contêm letras para representar posições especiais de loja e encarte. Por isso, o pipeline Polars aplica `CAUSAL_SCHEMA_OVERRIDES` explícito (`pl.Utf8`) e a tabela CQL `causal_promotions_by_store_week` tipa ambos os campos como `text`.
-3. **Decomposição Oficial de Preço e Desconto (PDF pág. 3):** O valor `SALES_VALUE` já reflete o valor líquido recebido pelo varejista após o desconto de fidelidade (`RETAIL_DISC`, negativo) e o desconto de pareamento da loja (`COUPON_MATCH_DISC`, negativo), enquanto `COUPON_DISC` é reembolsado pelo fabricante:
-   - $\text{Loyalty Card Unit Price} = \dfrac{\text{SALES\_VALUE} - (\text{RETAIL\_DISC} + \text{COUPON\_MATCH\_DISC})}{\text{QUANTITY}}$
-   - $\text{Actual Customer Paid} = \text{SALES\_VALUE} + \text{COUPON\_DISC}$
+3. **Decomposição Oficial de Preço e Desconto (PDF pág. 3):** O valor `SALES_VALUE` já reflete o faturamento líquido recebido pelo varejista após o desconto do cartão fidelidade (`RETAIL_DISC`, registrado como número negativo) e o desconto de pareamento da loja (`COUPON_MATCH_DISC`, negativo), enquanto `COUPON_DISC` é reembolsado pelo fabricante:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                    DECOMPOSIÇÃO DO PREÇO DE PRATELEIRA E DESCONTOS (PDV)                        │
+├─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  • Preço Unitário s/ Fidelidade (Prateleira) = (SALES_VALUE - (RETAIL_DISC + COUPON_MATCH_DISC))│
+│                                                ─────────────────────────────────────────────────│
+│                                                                    QUANTITY                     │
+│                                                                                                 │
+│  • Preço Unitário c/ Cartão Fidelidade       = (SALES_VALUE - COUPON_MATCH_DISC) / QUANTITY     │
+│                                                                                                 │
+│  • Valor Efetivamente Pago pelo Cliente      = SALES_VALUE + COUPON_DISC   (COUPON_DISC <= 0)   │
+├─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  Exemplo Real (Produto 72717 · Semana 40 · PDF pág. 4):                                         │
+│    Preço Cheio = $4.38  │  RETAIL_DISC = -$1.38  │  COUPON_DISC = -$0.50  │  MATCH_DISC = -$0.50│
+│    ──► Receita Loja (SALES_VALUE) = $2.50        ──► Pago pelo Cliente no Caixa = $2.00 ($1.88*)│
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -58,7 +89,7 @@ O dataset oficial **dunnhumby — The Complete Journey** acompanha todas as comp
 
 Para avaliar o projeto com todo o contexto técnico e de negócio, recomendamos seguir a leitura dos dois documentos principais na ordem abaixo:
 
-### Passo 1 — Arquitetura Poliglota, Modelagem NoSQL e Análise Crítica $\rightarrow$ [**`docs/ARCHITECTURE.md`**](docs/ARCHITECTURE.md)
+### Passo 1 — Arquitetura Poliglota, Modelagem NoSQL e Análise Crítica → [**`docs/ARCHITECTURE.md`**](docs/ARCHITECTURE.md)
 Antes de observar os números de saída, o documento [**`docs/ARCHITECTURE.md`**](docs/ARCHITECTURE.md) fundamenta **por que e como** cada banco foi modelado, contendo **4 diagramas padronizados em Draw.io SVG**:
 - **Visão Geral e Camada de Observabilidade (`Seção 1`):** detalha o fluxo desde os 8 CSVs até as 5 raias da arquitetura e a camada transversal de observabilidade, linhagem, qualidade e metadados.
 - **Dualidade Operacional Modo A vs. Modo B (`Seção 2`):** explica como o **Modo A (Batch 711 dias)** alimenta análises históricas de 2 anos e como o **Modo B (Event Replay `DAY 649..657`)** avança o relógio dia a dia para provar a expiração de **TTL**, a rotação `$slice: -5` e a invalidação **Cache-Aside** (`DEL profile:{id}`).
@@ -66,10 +97,10 @@ Antes de observar os números de saída, o documento [**`docs/ARCHITECTURE.md`**
   - **MongoDB:** combinação de *Polymorphic Schema*, *Subset Pattern* (`$slice: -5`), *Extended Reference Pattern* e *Computed Pattern*, apoiados por 3 índices B-Tree (`idx_household_key_unique`, `idx_demographics_class1_class3`, `idx_behavior_avg_weekly_spend_desc`).
   - **Apache Cassandra:** desenho das 4 tabelas CQL (`transactions_by_household`, `transactions_by_household_product`, `sales_by_product_week`, `causal_promotions_by_store_week`), chaves de partição/clustering e eliminação total de `ALLOW FILTERING`.
   - **Redis:** convenção canônica de chaves (`objeto:id`), fórmula de TTL dinâmico e ciclo completo do **Cache-Aside**.
-- **Matriz Teorema CAP e Consistência Ajustável (`Seção 4`):** *trade-offs* entre **CP** (MongoDB `w: "majority"`), **AP com consistência ajustável** (Cassandra `ONE` para leitura analítica vs. `LOCAL_QUORUM` com $R + W > N$ para escrita/leitura transacional em produção) e **AP em memória** (Redis com `TTL` e invalidação explícita).
-- **Análise Crítica (`Seção 5`):** responde em profundidade ***"Onde entraria um banco de Grafos (Neo4j)?"*** (modelando nós `:Household`, `:Product`, `:Campaign`, `:Coupon` e arestas `[:BOUGHT_WITH]` para *Next-Best-Offer*, atribuição multi-salto e comunidades *Loualike* via GDS, além de justificar por que as 3 perguntas obrigatórias não exigem travessia de grafo) e projeta a **Evolução Corporativa em Kubernetes** (*Strimzi Kafka Operator* + *Outbox/CDC*, *K8ssandra Operator*, *MongoDB Operator*, *Redis Cluster Operator* e *Argo Workflows*).
+- **Matriz Teorema CAP e Consistência Ajustável (`Seção 4`):** *trade-offs* entre **CP** (MongoDB `w: "majority"`), **AP com consistência ajustável** (Cassandra `ONE` para leitura analítica vs. `LOCAL_QUORUM` com `R + W > N` para escrita/leitura transacional em produção) e **AP em memória** (Redis com `TTL` e invalidação explícita).
+- **Análise Crítica (`Seção 5`):** responde em profundidade ***"Onde entraria um banco de Grafos (Neo4j)?"*** (modelando nós `:Household`, `:Product`, `:Campaign`, `:Coupon` e arestas `[:BOUGHT_WITH]` para *Next-Best-Offer*, atribuição multi-salto e comunidades *Lookalike* via GDS, além de justificar por que as 3 perguntas obrigatórias não exigem travessia de grafo) e projeta a **Evolução Corporativa em Kubernetes** (*Strimzi Kafka Operator* + *Outbox/CDC*, *K8ssandra Operator*, *MongoDB Operator*, *Redis Cluster Operator* e *Argo Workflows*).
 
-### Passo 2 — Respostas Executivas e Evidências Empíricas $\rightarrow$ [**`docs/BUSINESS_ANSWERS.md`**](docs/BUSINESS_ANSWERS.md)
+### Passo 2 — Respostas Executivas e Evidências Empíricas → [**`docs/BUSINESS_ANSWERS.md`**](docs/BUSINESS_ANSWERS.md)
 Com a arquitetura compreendida, o documento [**`docs/BUSINESS_ANSWERS.md`**](docs/BUSINESS_ANSWERS.md) apresenta as respostas executivas e técnicas extraídas diretamente dos 3 bancos para as **3 Perguntas Obrigatórias de Negócio + Consultas Bônus de Trade Marketing**:
 1. **Pergunta 1 (*Qual o perfil e o histórico recente de um domicílio do programa?*):**
    - Evidência completa para **John Smith (`household_key = 208`)**: faixa etária `Age Group4`, renda `Level5`, casa própria (`Homeowner`), gasto acumulado de **`$4,296.33` em 140 cestas** (`$53.70/semana`), últimas 5 cestas embutidas no MongoDB e últimas 20 transações retornadas da partição física do Cassandra em ordem decrescente (além do histórico isolado das 7 compras do produto `1017772`).
@@ -145,6 +176,15 @@ docker compose ps
 
 ### Modo A — Carga Histórica Completa (`cutoff_day = 711`, `reference_day = 650`)
 Processa os arquivos CSV *out-of-core* via Polars (`scan_csv` + `read_csv_batched`) sem carregar o dataset inteiro em memória:
+
+```text
+[8 CSVs dunnhumby] ──► Polars scan_csv(streaming=True) / read_csv_batched(50.000)
+                         │
+                         ├──► 1. [MongoDB]   Upsert em lote de 2.500 docs (801 c/ demografia, $slice:-5)
+                         ├──► 2. [Cassandra] UNLOGGED BATCH nas 4 tabelas CQL (tx_by_hh, sales, causal)
+                         └──► 3. [Redis]     Pipeline HSET/SADD/ZADD + TTL ativo em reference_day = 650
+```
+
 ```python
 from basketlens.ingestion import run_full_ingestion
 
@@ -154,6 +194,16 @@ print(summary)
 
 ### Modo B — Operação Dia a Dia / Event Replay (`DAY = 649 .. 657`)
 Simula a operação diária da rede varejista passo a passo a partir da véspera do Dia 650, demonstrando o checkout de **John Smith (`household_key = 208`)**, o resgate do cupom `51800000050` no Dia 654, a rotação `$slice: -5` no MongoDB, a invalidação `DEL profile:208` e a expiração por **TTL** da Campanha 22 após o Dia 656:
+
+```text
+[Polars scan_csv().filter(DAY == D)] (~3.600 eventos/dia)
+        │
+        ├──► PASSO 1 [Redis]     : Recalcula TTL = (END_DAY - D)*5s e processa resgates (SREM)
+        ├──► PASSO 2 [Cassandra] : INSERT das compras do dia D (transactions_by_household)
+        ├──► PASSO 3 [MongoDB]   : UpdateOne: $inc spend/baskets + $push recent_baskets ($slice: -5)
+        └──► PASSO 4 [Redis]     : DEL profile:{id} imediato (elimina leituras defasadas!)
+```
+
 ```python
 from basketlens.replay import prepare_replay_baseline, replay_range
 
@@ -162,6 +212,15 @@ logs = replay_range(start_day=650, end_day=657, seconds_per_day=5, watch_househo
 ```
 
 ### Consulta Integrada 360º e Perguntas de Negócio (`basketlens.queries`)
+
+```text
+build_360_view(208)
+  │
+  ├──► 1. [Redis] GET profile:208 ──► Hit: RAM < 0.5 ms | Miss: MongoDB -> SETEX 60s
+  ├──► 2. [Cassandra] SELECT ... FROM transactions_by_household WHERE household_key = 208 LIMIT 20
+  └──► 3. [Redis] SMEMBERS household:208:campaigns + TTL/HGETALL (filtra TTL > 0)
+```
+
 ```python
 from basketlens.queries import (
     build_360_view,

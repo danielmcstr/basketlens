@@ -122,6 +122,55 @@ def test_standardized_drawio_architecture_svgs_exist_and_are_valid() -> None:
         assert f"assets/{svg_name}" in arch_content, f"{svg_name} not embedded in docs/ARCHITECTURE.md"
 
 
+def test_python_library_docstrings_and_notebooks_contain_ascii_db_diagrams() -> None:
+    """Verify public `basketlens` functions and all 4 notebooks include ASCII database interaction diagrams."""
+    from basketlens import check_all_connections, initialize_all_schemas
+    from basketlens.ingestion import ingest_redis_state, run_full_ingestion
+    from basketlens.queries import (
+        benchmark_cache_aside_latency,
+        build_360_view,
+        get_active_campaigns_for_household,
+        get_avg_weekly_spend_by_demographic,
+        get_household_product_history,
+        get_household_profile_and_recent_history,
+        get_product_causal_promotion_lift,
+        get_store_weekly_showcase,
+    )
+    from basketlens.replay import prepare_replay_baseline, replay_day, replay_range, restore_full_historical_state
+    from basketlens.schemas.mongo_schema import explain_query
+
+    for fn in (
+        check_all_connections,
+        initialize_all_schemas,
+        explain_query,
+        run_full_ingestion,
+        ingest_redis_state,
+        prepare_replay_baseline,
+        replay_day,
+        replay_range,
+        restore_full_historical_state,
+        build_360_view,
+        benchmark_cache_aside_latency,
+        get_household_profile_and_recent_history,
+        get_household_product_history,
+        get_active_campaigns_for_household,
+        get_avg_weekly_spend_by_demographic,
+        get_product_causal_promotion_lift,
+        get_store_weekly_showcase,
+    ):
+        doc = fn.__doc__ or ""
+        assert "Database Interaction:" in doc and "──►" in doc, f"Missing ASCII DB diagram in docstring of {fn.__name__}"
+
+    for nb_name in (
+        "01_eda_and_data_quality.ipynb",
+        "02_full_ingestion_setup.ipynb",
+        "03_event_replay_streaming.ipynb",
+        "04_polyglot_360_analytics.ipynb",
+    ):
+        nb_text = (PROJECT_ROOT / "notebooks" / nb_name).read_text(encoding="utf-8")
+        assert "──►" in nb_text, f"Missing ASCII database diagram in {nb_name}"
+
+
 def test_all_four_notebooks_and_reference_pdf_exist_and_are_valid() -> None:
     """Verify the official PDF guide and all 4 executed Jupyter notebooks exist."""
     pdf_path = PROJECT_ROOT / "docs" / "dunnhumby_The-Complete-Journey-User-Guide.pdf"

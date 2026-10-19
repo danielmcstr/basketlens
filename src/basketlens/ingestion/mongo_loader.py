@@ -334,7 +334,16 @@ def ingest_mongo_households(
     db: Database[dict[str, Any]] | None = None,
     settings: Settings | None = None,
 ) -> dict[str, Any]:
-    """Ingest all 2,500 household 360º profiles into MongoDB in batches via `bulk_write`."""
+    """Ingest all 2,500 household 360º profiles into MongoDB in batches via `bulk_write`.
+
+    Database Interaction:
+        [transaction_data + hh_demographic + product + campaign_table CSVs]
+           └──► Polars Out-of-Core Aggregation (DAY <= cutoff_day)
+                  └──► [MongoDB db.households] bulk_write(UpdateOne(..., upsert=True))
+                         ├── 801 documentos COM subdocumento demographics (Polimorfismo)
+                         ├── 1.699 documentos SEM demographics (zero campos NULL)
+                         └── behavior_summary (RFM) + recent_baskets ($slice: -5 enriquecido)
+    """
     cfg = settings or get_settings()
     owns_client = db is None
     client = None

@@ -11,6 +11,25 @@
 
 ### 1.1 Estratégia Poliglota de Execução (`build_360_view` + `get_household_profile_and_recent_history`)
 Para responder à Pergunta 1 para o cliente do estudo de caso oficial do guia da dunnhumby (**John Smith, `household_key = 208`**), a arquitetura combina três operações sem ler nenhum arquivo CSV:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│              FLUXO POLIGLOTA DA PERGUNTA 1 (PERFIL 360º + HISTÓRICO RECENTE)                    │
+├─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  build_360_view(household_key = 208)                                                            │
+│    │                                                                                            │
+│    ├──► 1. [Redis] GET profile:208                                                              │
+│    │         ├─► Cache Hit  : Retorna JSON em ~0.35 ms (source="redis", speedup ~6.8x)          │
+│    │         └─► Cache Miss : Consulta [MongoDB] db.households.find_one({household_key: 208})   │
+│    │                          via índice EXPRESS_IXSCAN (0 ms) e grava [Redis] SETEX 60s        │
+│    │                                                                                            │
+│    ├──► 2. [Cassandra] SELECT ... FROM transactions_by_household WHERE household_key = 208      │
+│    │                   LIMIT 20 (leitura O(1) no topo da partição ordenada em disco)            │
+│    │                                                                                            │
+│    └──► 3. [Redis] SMEMBERS household:208:campaigns + TTL/HGETALL (filtra TTL > 0 em RAM)       │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
 1. **Redis (Cache-Aside `GET profile:208`)**: verifica se o documento 360º já está em memória RAM. Em caso de *Cache Miss*, consulta o MongoDB e grava `SETEX profile:208 60 <json>`.
 2. **MongoDB (`db.households.find_one({"household_key": 208})`)**: retorna o perfil demográfico (`demographics`), o resumo comportamental consolidado (`behavior_summary`), as 5 últimas cestas enriquecidas (`recent_baskets`) e as campanhas recebidas (`campaigns_received`).
 3. **Apache Cassandra (`transactions_by_household`)**: lê o topo da partição física `household_key = 208`, que já está ordenada em disco por `CLUSTERING ORDER BY (week_no DESC, day DESC, basket_id DESC, product_id ASC)`.
@@ -107,6 +126,20 @@ Quando o filtro inclui simultaneamente `household_key = 208` e `product_id = 101
 ## 2. Pergunta de Negócio 2 — Quais campanhas estão ativas agora para um domicílio?
 
 ### 2.1 Estado Ativo em `REFERENCE_DAY = 650` (`get_active_campaigns_for_household(208)`)
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│               FLUXO POLIGLOTA DA PERGUNTA 2 (CAMPANHAS E CUPONS ATIVOS COM TTL)                 │
+├─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  get_active_campaigns_for_household(household_key = 208)                                        │
+│    └──► [Redis em Memória]                                                                      │
+│           ├── 1. SMEMBERS household:208:campaigns ──► obtém campanhas atribuídas {22, ...}     │
+│           ├── 2. TTL/HGETALL campanha:{id} ──► filtra campanhas com TTL residual > 0            │
+│           └── 3. Intersecta household:208:coupons ∩ campanha:{id}:coupons                        │
+│                  ──► HGETALL cupom:{upc} (retorna 21 cupons ativos, incl. 51800000050)          │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
 Posicionando o relógio operacional em `REFERENCE_DAY = 650` com `SECONDS_PER_DAY = 5`:
 - Das **30 campanhas** do catálogo (`campaign_desc.csv`), apenas **5 estão vigentes globalmente** no Dia 650 (`START_DAY <= 650 <= END_DAY`):
   - **Campanha 15** (`TypeC`, Dias 547–708, `TTL = 290s`)
@@ -117,7 +150,7 @@ Posicionando o relógio operacional em `REFERENCE_DAY = 650` com `SECONDS_PER_DA
 - Embora John Smith (`household_key = 208`) tenha recebido historicamente 8 campanhas (`[8, 13, 17, 18, 22, 26, 29, 30]`), as campanhas `8`, `13`, `17` e `18` já expiraram antes do Dia 650 (`END_DAY < 650`), e as campanhas `26`, `29` e `30` ainda não iniciaram (`START_DAY > 650`).
 - Portanto, no Dia 650, `SMEMBERS household:208:campaigns` filtrado por `TTL(campanha:{id}) > 0` retorna **exclusivamente a Campanha 22**:
   - **Campanha Ativa:** `22` (`DESCRIPTION = "TypeB"`, mecanismo *Triggered/segmented campaign pool*, vigência `START_DAY = 624` a `END_DAY = 656`, `TTL = 30s`).
-  - **Cupons Elegíveis (`household:208:coupons` $\cap$ `campanha:22:coupons`):** **21 cupons ativos**, incluindo o cupom **`51800000050`** (que desconta 38 produtos, entre eles `PRODUCT_ID = 72717` e `1017772`).
+  - **Cupons Elegíveis (`household:208:coupons` ∩ `campanha:22:coupons`):** **21 cupons ativos**, incluindo o cupom **`51800000050`** (que desconta 38 produtos, entre eles `PRODUCT_ID = 72717` e `1017772`).
 
 ### 2.2 Evolução Dinâmica no Event Replay (Dias 650 a 657 — `notebooks/03_event_replay_streaming.ipynb`)
 
@@ -141,6 +174,23 @@ Posicionando o relógio operacional em `REFERENCE_DAY = 650` com `SECONDS_PER_DA
 ## 3. Pergunta de Negócio 3 — Qual o gasto semanal médio por faixa demográfica?
 
 ### 3.1 Estratégia de Execução Pushdown (`get_avg_weekly_spend_by_demographic`)
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│            FLUXO POLIGLOTA DA PERGUNTA 3 (GASTO SEMANAL MÉDIO POR DEMOGRAFIA)                   │
+├─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  get_avg_weekly_spend_by_demographic("classification_1" | "classification_3")                   │
+│    │                                                                                            │
+│    ├──► 1. [MongoDB]   db.households.find({demographics.<field>: {$exists: true}})              │
+│    │                   via índice idx_demographics_class1_class3 (801 chaves, zero COLLSCAN)    │
+│    │                                                                                            │
+│    ├──► 2. [Cassandra] execute_concurrent_with_args em transactions_by_household                │
+│    │                   para as 801 partições (allow_filtering_used = False!)                    │
+│    │                                                                                            │
+│    └──► 3. [Agregação] Consolida gasto total, semanas ativas e gasto semanal médio ($)          │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
 1. **MongoDB Indexed Projection (`idx_demographics_class1_class3`)**: projeta apenas os **801 domicílios** que possuem subdocumento `demographics` (`nReturned = 801`, zero `COLLSCAN`).
 2. **Cassandra Partition Pushdown (`execute_concurrent_with_args`)**: consulta concorrentemente as 801 partições em `transactions_by_household` (`WHERE household_key = ?`), com **`allow_filtering_used = False`** (zero leitura dos outros 1.699 domicílios sem demografia).
 3. **Consolidação Ordinal**: agrupa as 801 famílias pelas duas dimensões principais do guia oficial da dunnhumby:
@@ -188,6 +238,24 @@ Posicionando o relógio operacional em `REFERENCE_DAY = 650` com `SECONDS_PER_DA
 ## 4. Consultas Bônus de Trade Marketing — Lift Promocional de Display & Mailer (`causal_data`)
 
 ### 4.1 Estudo de Caso do Guia Oficial: Produto `72717` na Semana 40 (`get_product_causal_promotion_lift(72717)`)
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│              FLUXO POLIGLOTA DE TRADE MARKETING (LIFT PROMOCIONAL DE DISPLAY & MAILER)           │
+├─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  get_product_causal_promotion_lift(product_id = 72717 | 862349)                                 │
+│    ├──► [Cassandra] SELECT week_no, total_units, total_sales FROM sales_by_product_week         │
+│    │                WHERE product_id = ?                                                        │
+│    │                                                                                            │
+│    ├──► [Cassandra] execute_concurrent_with_args em causal_promotions_by_store_week             │
+│    │                WHERE store_id = ? AND week_no = ? AND product_id = ?                       │
+│    │                (detecta gôndola display != '0' e encarte mailer != '0')                    │
+│    │                                                                                            │
+│    └──► [Trade Lift] Compara faturamento médio em semanas COM vs. SEM promoção                  │
+│                      (SKU 862349: $86.96 vs. $19.43/semana ──► Lift = +347,56%)                 │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
 Cruzando `sales_by_product_week` (`WHERE product_id = 72717`) com `causal_promotions_by_store_week` (`WHERE store_id = ? AND week_no = ? AND product_id = 72717`):
 - **Semana 40 (`DAY = 272`)**:
   - Venda registrada: **2 unidades**, receita líquida **`$2.50`** (`RETAIL_DISC = -$1.38`, `COUPON_DISC = -$0.50`, `COUPON_MATCH_DISC = -$0.50` — preço cheio de gôndola de `$4.38` reduzido para `$1.88` pago pelo cliente, exatamente como descrito na página 4 do PDF oficial!).

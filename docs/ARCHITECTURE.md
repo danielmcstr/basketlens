@@ -72,7 +72,7 @@ flowchart TB
 | Banco | Família NoSQL | Papel Arquitetural no BasketLens | Fonte da Verdade (*System of Record*)? | Justificativa Técnica |
 |:---|:---|:---|:---|:---|
 | **MongoDB (`mongo:8.0.4`)** | Documentos (BSON) | **Agregado do Perfil 360º (`households`)**: demografia, resumo comportamental RFM (`behavior_summary`), 5 últimas cestas enriquecidas (`recent_baskets`) e histórico de campanhas recebidas. | **Sim**, para o perfil consolidado do domicílio. | O perfil 360º é lido como uma unidade coesa na tela de atendimento/CRM. Além disso, apenas 801 de 2.500 famílias possuem atributos demográficos — o modelo documental acomoda essa heterogeneidade com **polimorfismo** nativo sem `ALTER TABLE` nem dezenas de colunas `NULL`. |
-| **Apache Cassandra (`cassandra:5.0.2`)** | Colunas Largas (*Wide-Column*) | **Série Temporal de Transações e Dados Causais**: 2,59M itens comprados e 3,68M registros de exposição em gôndola/tabloide (`causal_data`). | **Sim**, para os eventos imutáveis de compra e promoção física. | Transações de PDV e auditoria de gôndola são *append-only* de altíssimo volume. A modelagem orientada à consulta (chave de partição + *clustering order* decrescente) entrega leituras por domicílio/período ou loja/semana em complexidade constante $O(1)$ por partição. |
+| **Apache Cassandra (`cassandra:5.0.2`)** | Colunas Largas (*Wide-Column*) | **Série Temporal de Transações e Dados Causais**: 2,59M itens comprados e 36,78M registros de exposição em gôndola/tabloide (`causal_data`). | **Sim**, para os eventos imutáveis de compra e promoção física. | Transações de PDV e auditoria de gôndola são *append-only* de altíssimo volume. A modelagem orientada à consulta (chave de partição + *clustering order* decrescente) entrega leituras por domicílio/período ou loja/semana em complexidade constante `O(1)` por partição. |
 | **Redis (`redis:7.4.2-alpine`)** | Chave-Valor em Memória (*Speed Layer*) | **Motor de Elegibilidade em Tempo Real e Cache-Aside**: campanhas e cupons vigentes com **TTL** nativo, cache do perfil (`profile:{id}`) e vitrines semanais (`ZSET`/`SET`). | **Não** — atua como camada de velocidade (*Speed Layer*). | No checkout do PDV ou abertura do app, validar se um cupom está ativo exige latência sub-milissegundo e expiração automática gerenciada pelo próprio banco via `EXPIRE`/`TTL`, sem *cron jobs* de limpeza. |
 
 ---
@@ -125,7 +125,7 @@ A coleção `households` armazena exatamente **2.500 documentos** (1 para cada `
 
 #### Estratégia de Indexação no MongoDB
 Três índices B-Tree secundários garantem que todas as consultas operem via `IXSCAN` / `EXPRESS_IXSCAN` (zero `COLLSCAN`):
-- `idx_household_key_unique`: `{ "household_key": 1 }` (`unique: true`) — busca pontual $O(\log N)$ do perfil 360º.
+- `idx_household_key_unique`: `{ "household_key": 1 }` (`unique: true`) — busca pontual `O(log N)` do perfil 360º.
 - `idx_demographics_class1_class3`: `{ "demographics.classification_1": 1, "demographics.classification_3": 1 }` — acelera a projeção segmentada das 801 famílias na Pergunta 3.
 - `idx_behavior_avg_weekly_spend_desc`: `{ "behavior_summary.avg_weekly_spend": -1 }` — ordenação instantânea de clientes VIP por gasto semanal médio.
 
@@ -138,7 +138,7 @@ No Cassandra, a modelagem parte das consultas (*Query-Driven Modeling*): **uma t
 | Tabela CQL | Chave Primária (`PRIMARY KEY`) | `CLUSTERING ORDER BY` | Consulta Atendida e Justificativa Técnica |
 |:---|:---|:---|:---|
 | `transactions_by_household` | `((household_key), week_no, day, basket_id, product_id)` | `week_no DESC, day DESC, basket_id DESC, product_id ASC` | **Pergunta 1 e Pergunta 3:** Todas as compras de um domicílio ficam na mesma partição física (`household_key`) e já estão fisicamente ordenadas em disco da semana/dia mais recente para o mais antigo. Um `SELECT ... WHERE household_key = 208 LIMIT 20` lê apenas o topo da *SSTable* em poucos milissegundos. |
-| `transactions_by_household_product` | `((household_key, product_id), day, basket_id)` | `day DESC, basket_id DESC` | **Histórico de Recompra por Produto:** Quando a pergunta filtra por cliente **e** produto específico (ex.: compras do item `1017772` por John Smith `#208`), a tabela anterior exigiria varrer toda a partição do cliente. A chave de partição composta `(household_key, product_id)` isola o histórico exato daquele SKU naquele domicílio em $O(1)$. |
+| `transactions_by_household_product` | `((household_key, product_id), day, basket_id)` | `day DESC, basket_id DESC` | **Histórico de Recompra por Produto:** Quando a pergunta filtra por cliente **e** produto específico (ex.: compras do item `1017772` por John Smith `#208`), a tabela anterior exigiria varrer toda a partição do cliente. A chave de partição composta `(household_key, product_id)` isola o histórico exato daquele SKU naquele domicílio em `O(1)`. |
 | `sales_by_product_week` | `((product_id), week_no)` | `week_no DESC` | **Desempenho Semanal de SKU (Trade Marketing):** Agrega `total_units`, `total_sales` e `total_baskets` por `product_id` ao longo das semanas (`week_no`), permitindo consultar a curva de vendas do produto `72717` ou `862349` sem varrer domicílios. |
 | `causal_promotions_by_store_week` | `((store_id, week_no), product_id)` | `product_id ASC` | **Auditoria de Gôndola e Tabloide (`causal_data.csv` — 695,9 MB):** A chave composta `(store_id, week_no)` agrupa todos os produtos promovidos em uma loja em determinada semana na mesma partição. As colunas `display_type` e `mailer_page` são tipadas como `text` porque o dataset utiliza códigos alfanuméricos (`'0'..'9'`, `'A'` para display; `'A'`, `'D'`, `'F'`, `'H'`, `'J'`, `'L'`, `'P'`, `'X'`, `'Z'` para mailer). |
 
@@ -174,8 +174,8 @@ Seguindo a convenção canônica `objeto:id` da disciplina, o Redis armazena 7 p
 | Banco | Família | Classificação CAP | Configuração de Consistência | Racional de Negócio e Trade-off |
 |:---|:---|:---|:---|:---|
 | **MongoDB** | Documentos | **CP** (*Consistency + Partition Tolerance*) | Escrita primária com `w: 1` (ou `w: "majority"` em ReplicaSet) e leitura no primário | O documento `households` representa o cadastro e os indicadores consolidados do cliente. Escritas concorrentes de atualização de cesta (`$inc` / `$push`) precisam ser atômicas por documento para não corromper o vetor `recent_baskets`. |
-| **Apache Cassandra** | Colunas Largas | **AP** (*Availability + Partition Tolerance*) com consistência ajustável (*Tunable Consistency*) | **Leitura Analítica:** `ONE`<br>**Escrita Operacional / Reprocessamento:** `ONE` (single-node dev) / `LOCAL_QUORUM` (produção 3 nós, $R + W > N$) | No PDV de supermercado, **disponibilidade de escrita é inegociável** (o caixa nunca pode parar de registrar vendas por falha de rede parcial). Para séries históricas imutáveis e agregações analíticas (Pergunta 3), `ONE` maximiza vazão e reduz latência; em cluster de produção com `replication_factor = 3`, `LOCAL_QUORUM` garante leitura consistente imediata (*read-your-writes*). |
-| **Redis** | Chave-Valor | **AP** (Baixa Latência em Memória) | Consistência **Eventual** com invalidação explícita (`DEL`) e expiração temporal (`TTL`) | Exibir uma vitrine semanal ou o cache do perfil com poucos segundos de defasagem tem custo de negócio próximo de zero, enquanto responder em $< 1\text{ ms}$ no checkout é crítico. Para resgates de cupons, o `SREM` em `household:{id}:coupons` é atômico em memória e o registro definitivo persiste no log transacional. |
+| **Apache Cassandra** | Colunas Largas | **AP** (*Availability + Partition Tolerance*) com consistência ajustável (*Tunable Consistency*) | **Leitura Analítica:** `ONE`<br>**Escrita Operacional / Reprocessamento:** `ONE` (single-node dev) / `LOCAL_QUORUM` (produção 3 nós, `R + W > N`) | No PDV de supermercado, **disponibilidade de escrita é inegociável** (o caixa nunca pode parar de registrar vendas por falha de rede parcial). Para séries históricas imutáveis e agregações analíticas (Pergunta 3), `ONE` maximiza vazão e reduz latência; em cluster de produção com `replication_factor = 3`, `LOCAL_QUORUM` garante leitura consistente imediata (*read-your-writes*). |
+| **Redis** | Chave-Valor | **AP** (Baixa Latência em Memória) | Consistência **Eventual** com invalidação explícita (`DEL`) e expiração temporal (`TTL`) | Exibir uma vitrine semanal ou o cache do perfil com poucos segundos de defasagem tem custo de negócio próximo de zero, enquanto responder em `< 1 ms` no checkout é crítico. Para resgates de cupons, o `SREM` em `household:{id}:coupons` é atômico em memória e o registro definitivo persiste no log transacional. |
 
 ---
 
@@ -211,7 +211,7 @@ graph LR
 #### Três Casos de Uso Ideais para o Neo4j no Contexto dunnhumby:
 1. **Afinidade de Cesta e *Next-Best-Offer* (`BOUGHT_WITH`):**
    - Consulta Cypher: *"Quais produtos são frequentemente comprados na mesma cesta que o item `1017772` por famílias do mesmo perfil que John Smith (`208`), mas que ele ainda não experimentou?"*
-   - No Cassandra ou MongoDB, descobrir co-ocorrências de 2º e 3º grau exigiria múltiplos *self-joins* proibitivos em memória. No Neo4j, é uma travessia local $O(k)$ a partir do nó `(:Household {key: 208})`.
+   - No Cassandra ou MongoDB, descobrir co-ocorrências de 2º e 3º grau exigiria múltiplos *self-joins* proibitivos em memória. No Neo4j, é uma travessia local `O(k)` a partir do nó `(:Household {key: 208})`.
 2. **Atribuição Fim-a-Fim de Campanhas (`RECEIVED -> OFFERS -> REDEEMED -> BOUGHT`):**
    - Permite rastrear o caminho completo entre o recebimento da campanha (`TypeA` personalizada vs. `TypeB` engatilhada), o resgate do cupom `51800000050` no Dia 654 e o efeito de transbordamento (*halo effect*) sobre outras categorias compradas na mesma cesta `41531980403`.
 3. **Comunidades e *Lookalike Audiences* (Algoritmos GDS — Louvain / PageRank / Node Similarity):**
@@ -219,9 +219,9 @@ graph LR
 
 #### Por que o Neo4j NÃO foi necessário para as 3 perguntas obrigatórias?
 As três perguntas obrigatórias do enunciado são problemas clássicos de:
-1. **Busca pontual de agregado + fatia ordenada por chave** (Pergunta 1 $\rightarrow$ MongoDB + Cassandra);
-2. **Pertinência em conjunto com expiração temporal** (Pergunta 2 $\rightarrow$ Redis `SMEMBERS` + `TTL`);
-3. **Agregação numérica agrupada por atributo dimensional** (Pergunta 3 $\rightarrow$ Cassandra *partition scan* + MongoDB *indexed projection*).
+1. **Busca pontual de agregado + fatia ordenada por chave** (Pergunta 1 → MongoDB + Cassandra);
+2. **Pertinência em conjunto com expiração temporal** (Pergunta 2 → Redis `SMEMBERS` + `TTL`);
+3. **Agregação numérica agrupada por atributo dimensional** (Pergunta 3 → Cassandra *partition scan* + MongoDB *indexed projection*).
 
 Nenhuma delas envolve caminhos de comprimento variável ou análise topológica de rede; introduzir um grafo para respondê-las adicionaria complexidade operacional sem ganho algorítmico.
 
