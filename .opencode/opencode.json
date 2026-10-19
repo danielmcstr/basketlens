@@ -1,0 +1,38 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "mcp": {
+        "playwright": {
+            "type": "local",
+            "command": [
+                "npx",
+                "@playwright/mcp@latest",
+                "--user-data-dir=/tmp/playwright",
+                "--timeout-navigation=120000"
+            ],
+            "enabled": true
+        },
+        "markitdown": {
+            "type": "local",
+            "command": [
+                "uvx",
+                "--quiet",
+                "markitdown-mcp"
+            ],
+            "enabled": true,
+            "timeout": 120000
+        },
+        "drawio": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "drawio-mcp-server",
+                "--editor",
+                "--http-port",
+                "4000"
+            ],
+            "enabled": true,
+            "timeout": 120000
+        }
+    }
+}

@@ -1,32 +1,32 @@
 schema: spec-driven
 
-# Project context (optional)
-# Add only constraints that should guide OpenSpec artifacts and workflows.
-# Include constraints an agent cannot infer by reading the code.
-# Keep general project documentation and discoverable codebase facts out.
-# Example:
-#   context: |
-#     Designs and tasks must cover Windows, macOS, and Linux
-#     Write all artifacts in Spanish
+context: |
+  Project: BasketLens — Case 7 (dunnhumby: The Complete Journey) Customer 360º Polyglot Intelligence.
+  Language convention: Documentation, comments, and Markdown prose in Brazilian Portuguese (PT-BR); code, identifiers, database collections/tables/keys, and file names in English.
+  Dataset & Reference Guide:
+  - Raw CSVs live in `dataset/` (~847 MB total, 6.27M rows across 8 files).
+  - Official reference dictionary is `docs/dunnhumby_The-Complete-Journey-User-Guide.pdf` (2023 edition).
+  - `hh_demographic.csv` uses the official anonymized ordinal columns (`classification_1`..`classification_5`, `HOMEOWNER_DESC`, `KID_CATEGORY_DESC`, `household_key`) for 801 out of 2,500 households.
+  - `causal_data.csv` uses alphanumeric codes (`display` includes `'0'..'9'`, `'A'`; `mailer` includes `'0'`, `'A'`, `'C'`, `'D'`, `'F'`, `'H'`, `'J'`, `'L'`, `'P'`, `'X'`, `'Z'`), so Cassandra CQL columns for display and mailer must be `text`.
+  - Canonical case study persona from the PDF is John Smith (`household_key = 208`), with default simulation reference day `REFERENCE_DAY = 650` (when Campaign 22, days 624–656, is active).
+  Core Technical Constraints:
+  - 100% local Docker Compose infrastructure with pinned versions for MongoDB (`mongo:8.0.4`), Apache Cassandra (`cassandra:5.0.2`), Redis (`redis:7.4.2-alpine`), and their dedicated pre-configured Web UIs (`mongo-express`, `cassandra-web`, `redis-commander`).
+  - Zero Full-Dataset In-Memory Rule: NEVER load large CSVs (`transaction_data.csv` 2.6M rows, `causal_data.csv` 3.68M rows) entirely into memory. Always use Polars lazy/streaming (`pl.scan_csv` + `.collect(streaming=True)`) or batched iteration (`pl.read_csv_batched` / partitioned filters by `WEEK_NO` or `DAY`).
+  - Polyglot Query Library (`src/basketlens/queries/`): Push down filters and aggregations to MongoDB indexes, Cassandra partition/clustering keys (no `ALLOW FILTERING`), and Redis keys/sets, bringing only the query result subset into Python memory.
+  - Dual Operational Modes:
+    1. Mode A (Full Historical Ingestion): Loads full 2-year Tier 2 dataset (`DAY` 1..711) into Cassandra, all 2,500 households into MongoDB (801 with `demographics` subdocument, 1,699 omitting `demographics` to demonstrate schema flexibility), and active campaigns/coupons into Redis.
+    2. Mode B (Event Replay Mode): Loads baseline state up to `cutoff_day` (e.g., Day 649) and replays subsequent days (`Day 650..656+`) step-by-step with configurable `SECONDS_PER_DAY`, updating Cassandra transactions, MongoDB `behavior_summary` (`$inc`) and `recent_baskets` (`$push` with `$slice: -5`), and Redis campaign TTLs + cache-aside invalidation (`DEL profile:{household_key}`).
+  - Python environment: Managed inside local `.venv` via `pyproject.toml`. Four Jupyter notebooks cover: (01) EDA & Data Quality, (02) Full Ingestion Setup, (03) Event Replay Streaming, and (04) Polyglot 360º Analytics.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always state what is out of scope
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Write prose in Brazilian Portuguese (PT-BR) while keeping technical identifiers, table names, and paths in English
+    - Clearly state what is in scope and out of scope for the specific phase
+  specs:
+    - Every requirement must have concrete, testable WHEN/THEN scenarios
+    - Enforce the Zero Full-Dataset In-Memory constraint and pinned Docker/database schemas where applicable
+  design:
+    - Document concrete schemas, key patterns, Polars streaming strategies, and trade-offs
+  tasks:
+    - Break tasks into clear, verifiable implementation steps ordered by dependency
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing

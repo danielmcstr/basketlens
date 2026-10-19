@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "basketlens"
+version = "0.1.0"
+description = "Case 7 — Fidelidade dunnhumby (The Complete Journey): Visão 360º do cliente com MongoDB, Apache Cassandra e Redis"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "BasketLens Team" }
+]
+dependencies = [
+  "polars>=1.14.0,<2.0.0",
+  "pymongo>=4.9.0,<5.0.0",
+  "cassandra-driver>=3.29.2,<4.0.0",
+  "redis>=5.2.0,<6.0.0",
+  "pydantic>=2.9.0,<3.0.0",
+  "pydantic-settings>=2.6.0,<3.0.0",
+  "jupyterlab>=4.2.0,<5.0.0",
+  "ipykernel>=6.29.0,<7.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.0,<9.0.0",
+  "jupyterlab>=4.2.0,<5.0.0",
+  "ipykernel>=6.29.0,<7.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
