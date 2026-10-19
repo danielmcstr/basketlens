@@ -47,7 +47,7 @@ def test_docker_compose_manifest_pins_required_images_and_containers() -> None:
         "redis:7.4.2-alpine",
         "basketlens-redis",
         "mongo-express:1.0.2-20-alpine3.19",
-        "delermando/cassandra-web:0.4.0",
+        "dcagatay/cassandra-web:0.5.0",
         "rediscommander/redis-commander:latest",
         "service_healthy",
     ):
