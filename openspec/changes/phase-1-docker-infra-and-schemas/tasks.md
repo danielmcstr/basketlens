@@ -7,7 +7,7 @@
 ## 2. Gerenciador de Conexões Poliglota (`src/basketlens/connections.py`)
 
 - [x] 2.1 Implementar `get_mongo_client()`, `get_mongo_db()`, `get_cassandra_cluster_and_session()` (com retry/backoff) e `get_redis_client()` em `src/basketlens/connections.py`
-- [ ] 2.2 Implementar `check_all_connections()` para testar conectividade dos 3 bancos e retornar diagnóstico estruturado
+- [x] 2.2 Implementar `check_all_connections()` para testar conectividade dos 3 bancos e retornar diagnóstico estruturado
 
 ## 3. Schemas, Índices e Keyspace (`src/basketlens/schemas/`)
 

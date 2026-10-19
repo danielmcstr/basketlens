@@ -110,3 +110,62 @@ def get_redis_client(
     }
     options.update(kwargs)
     return redis.Redis(**options)
+
+
+def check_all_connections(settings: Settings | None = None) -> dict[str, bool]:
+    """Execute a ping/heartbeat against MongoDB, Cassandra, and Redis."""
+    cfg = settings or get_settings()
+    status: dict[str, bool] = {
+        "mongodb": False,
+        "cassandra": False,
+        "redis": False,
+    }
+
+    mongo_client: MongoClient[dict[str, Any]] | None = None
+    try:
+        mongo_client = get_mongo_client(settings=cfg)
+        ping_result = mongo_client.admin.command("ping")
+        status["mongodb"] = bool(ping_result.get("ok") == 1)
+    except Exception:
+        status["mongodb"] = False
+    finally:
+        if mongo_client is not None:
+            mongo_client.close()
+
+    cluster: Cluster | None = None
+    try:
+        cluster, session = get_cassandra_cluster_and_session(
+            settings=cfg,
+            max_retries=3,
+            retry_delay=1.0,
+        )
+        row = session.execute("SELECT release_version FROM system.local").one()
+        status["cassandra"] = bool(row is not None and getattr(row, "release_version", None))
+    except Exception:
+        status["cassandra"] = False
+    finally:
+        if cluster is not None:
+            cluster.shutdown()
+
+    redis_client: redis.Redis | None = None
+    try:
+        redis_client = get_redis_client(settings=cfg)
+        status["redis"] = bool(redis_client.ping())
+    except Exception:
+        status["redis"] = False
+    finally:
+        if redis_client is not None:
+            redis_client.close()
+
+    return status
+
+
+__all__ = [
+    "cassandra_session_scope",
+    "check_all_connections",
+    "get_cassandra_cluster_and_session",
+    "get_mongo_client",
+    "get_mongo_db",
+    "get_redis_client",
+]
+
