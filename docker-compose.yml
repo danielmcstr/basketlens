@@ -58,6 +58,54 @@ services:
       retries: 5
       start_period: 5s
 
+  mongo-express:
+    image: mongo-express:1.0.2-20-alpine3.19
+    container_name: basketlens-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: "mongo"
+      ME_CONFIG_MONGODB_PORT: "27017"
+      ME_CONFIG_MONGODB_URL: "mongodb://mongo:27017/"
+      ME_CONFIG_BASICAUTH: "false"
+      ME_CONFIG_BASICAUTH_ENABLED: "false"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - basketlens-net
+
+  cassandra-web:
+    image: delermando/cassandra-web:0.4.0
+    container_name: basketlens-cassandra-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      CASSANDRA_HOST: "cassandra"
+      CASSANDRA_HOST_IP: "cassandra"
+      CASSANDRA_PORT: "9042"
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    networks:
+      - basketlens-net
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: basketlens-redis-commander
+    restart: unless-stopped
+    ports:
+      - "8082:8081"
+    environment:
+      REDIS_HOSTS: "local:redis:6379"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - basketlens-net
+
 volumes:
   mongo_data:
   cassandra_data:
