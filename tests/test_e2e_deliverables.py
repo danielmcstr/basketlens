@@ -65,12 +65,27 @@ def test_business_answers_doc_contains_empirical_evidence_for_all_questions() ->
 
 
 def test_readme_documents_setup_web_uis_notebooks_and_citation() -> None:
-    """Verify `README.md` documents Docker Compose, the 3 Web UIs, 4 notebooks, pytest, and dunnhumby citation."""
+    """Verify `README.md` documents context, 8 CSVs, links to docs, ASCII function diagrams, Web UIs, and citation."""
     readme_path = PROJECT_ROOT / "README.md"
     assert readme_path.is_file(), "Missing README.md"
     content = readme_path.read_text(encoding="utf-8")
 
     for expected in (
+        "docs/assets/arch-polyglot-overview.svg",
+        "docs/ARCHITECTURE.md",
+        "docs/BUSINESS_ANSWERS.md",
+        "causal_data.csv",
+        "transaction_data.csv",
+        "hh_demographic.csv",
+        "check_all_connections()",
+        "initialize_all_schemas()",
+        "run_full_ingestion(",
+        "prepare_replay_baseline(",
+        "replay_day(",
+        "build_360_view(",
+        "get_active_campaigns_for_household(",
+        "get_avg_weekly_spend_by_demographic(",
+        "get_product_causal_promotion_lift(",
         "docker compose up -d",
         "http://localhost:8081",
         "http://localhost:3000",
@@ -84,6 +99,27 @@ def test_readme_documents_setup_web_uis_notebooks_and_citation() -> None:
         "https://www.dunnhumby.com/source-files/",
     ):
         assert expected in content, f"Missing '{expected}' in README.md"
+
+
+def test_standardized_drawio_architecture_svgs_exist_and_are_valid() -> None:
+    """Verify all 4 Draw.io architecture SVGs exist in `docs/assets/`, contain mxfile metadata, and are referenced."""
+    import xml.etree.ElementTree as ET
+
+    arch_content = (PROJECT_ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+    svg_names = (
+        "arch-polyglot-overview.svg",
+        "arch-operational-modes.svg",
+        "arch-neo4j-graph.svg",
+        "arch-kubernetes-production.svg",
+    )
+    for svg_name in svg_names:
+        svg_path = PROJECT_ROOT / "docs" / "assets" / svg_name
+        assert svg_path.is_file(), f"Missing architecture SVG: {svg_name}"
+        raw = svg_path.read_text(encoding="utf-8")
+        assert "mxfile" in raw, f"Missing Draw.io mxfile metadata in {svg_name}"
+        root = ET.fromstring(raw)
+        assert root.tag.endswith("svg"), f"Invalid root tag in {svg_name}"
+        assert f"assets/{svg_name}" in arch_content, f"{svg_name} not embedded in docs/ARCHITECTURE.md"
 
 
 def test_all_four_notebooks_and_reference_pdf_exist_and_are_valid() -> None:

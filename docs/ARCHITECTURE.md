@@ -9,41 +9,21 @@
 
 ## 1. Visão Geral da Arquitetura Poliglota
 
-O **BasketLens** implementa uma arquitetura de **Persistência Poliglota** para varejo alimentar físico com programa de fidelidade, combinando três motores NoSQL de famílias distintas (**Documental**, **Colunar Larga** e **Chave-Valor em Memória**) orquestrados por uma camada de ingestão e consulta *out-of-core* em Python + **Polars**:
+<p align="center">
+  <img src="assets/arch-polyglot-overview.svg" alt="BasketLens 360º — Arquitetura Poliglota de Big Data & NoSQL com Camada de Observabilidade" width="100%"/>
+</p>
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                    CAMADA DE DADOS BRUTOS (dunnhumby — The Complete Journey)                    │
-│   8 arquivos CSV (~847,05 MB · 6.274.384 linhas · 2.500 domicílios · 711 dias / 102 semanas)   │
-└───────────────┬─────────────────────────────────┬────────────────────────────────┬──────────────┘
-                │                                 │                                │
-                ▼ (Polars scan_csv / streaming)   ▼ (Polars read_csv_batched)      ▼ (Polars scan_csv + pipeline)
-┌───────────────────────────────┐ ┌──────────────────────────────┐ ┌──────────────────────────────┐
-│     MongoDB 8.0.4 (CP)        │ │  Apache Cassandra 5.0.2 (AP) │ │    Redis 7.4.2-alpine (AP)   │
-│  Família: Documentos (BSON)   │ │  Família: Colunas Largas     │ │  Família: Chave-Valor (RAM)  │
-│  Porta: 27017                 │ │  Porta: 9042                 │ │  Porta: 6379                 │
-│  Web UI: mongo-express (:8081)│ │  Web UI: cassandra-web(:3000)│ │  Web UI: redis-cmd (:8082)   │
-├───────────────────────────────┤ ├──────────────────────────────┤ ├──────────────────────────────┤
-│ • Collection: households      │ │ • Keyspace: basketlens       │ │ • Hashes: campanha:{id},     │
-│   - 2.500 documentos          │ │ • 4 Tabelas por consulta:    │ │           cupom:{upc}        │
-│   - 801 c/ demographics       │ │   1) transactions_by_        │ │ • Sets: household:{id}:      │
-│   - 1.699 s/ demographics     │ │      household               │ │         campaigns / coupons  │
-│   - behavior_summary (RFM)    │ │   2) transactions_by_        │ │ • String: profile:{id}       │
-│   - recent_baskets ($slice:-5)│ │      household_product       │ │   (Cache-Aside c/ SETEX/DEL) │
-│   - 3 índices B-Tree (IXSCAN) │ │   3) sales_by_product_week   │ │ • ZSet/Set: ranking:week:{w},│
-│                               │ │   4) causal_promotions_by_   │ │   store:{id}:week:{w}:       │
-│                               │ │      store_week              │ │   displays                   │
-└───────────────┬───────────────┘ └───────────────┬──────────────┘ └───────────────┬──────────────┘
-                │                                 │                                │
-                └─────────────────────────────────┼────────────────────────────────┘
-                                                  ▼
-┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                CAMADA DE SERVIÇO E INTELIGÊNCIA 360º (Pacote Python basketlens)                 │
-│  • basketlens.ingestion : Ingestão histórica out-of-core (Modo A: cutoff_day = 711)             │
-│  • basketlens.replay    : Simulador operacional dia a dia (Modo B: Event Replay DAY 650..657)   │
-│  • basketlens.queries   : build_360_view(household_key) + Perguntas de Negócio 1, 2, 3 e Bônus  │
-└─────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
+O **BasketLens** implementa uma arquitetura de **Persistência Poliglota** para varejo alimentar físico com programa de fidelidade, combinando três motores NoSQL de famílias distintas (**Documental**, **Colunar Larga** e **Chave-Valor em Memória**) orquestrados por uma camada de ingestão e consulta *out-of-core* em Python + **Polars**. O diagrama acima estrutura o fluxo fim-a-fim em **5 raias arquiteturais** acompanhadas por uma **camada transversal de observabilidade**:
+
+1. **Fontes de Dados (Data Sources):** Os 8 arquivos CSV oficiais do dataset *dunnhumby — The Complete Journey* (~847,05 MB · 6.274.384 linhas · 2.500 domicílios · 711 dias / 102 semanas).
+2. **Ingestão & Processamento Out-of-Core:** Motor Python + **Polars** operando em dois modos complementares — **Modo A** (`basketlens.ingestion` via `scan_csv(streaming=True)` e `read_csv_batched` até `cutoff_day = 711`) e **Modo B** (`basketlens.replay` simulando o avanço diário `DAY 650..657` com `SECONDS_PER_DAY = 5`).
+3. **Armazenamento Poliglota NoSQL (Storage Layer):**
+   - **MongoDB 8.0.4 (CP — Documentos BSON, `:27017`):** Coleção `households` (2.500 documentos, sendo 801 com `demographics` e 1.699 sem `demographics`), consolidando `behavior_summary` (RFM), `recent_baskets` (`$slice: -5`) e 3 índices B-Tree (`IXSCAN`).
+   - **Apache Cassandra 5.0.2 (AP — Colunas Largas, `:9042`):** Keyspace `basketlens` com 4 tabelas orientadas à consulta (`transactions_by_household`, `transactions_by_household_product`, `sales_by_product_week` e `causal_promotions_by_store_week`).
+   - **Redis 7.4.2-alpine (AP — Chave-Valor em RAM, `:6379`):** Hashes e Sets de campanhas/cupons ativos com `TTL` dinâmico, Cache-Aside de perfis (`profile:{id}` com `SETEX`/`DEL`) e vitrines semanais (`ranking:week:{w}`, `store:{id}:week:{w}:displays`).
+4. **Serviço & Inteligência Poliglota (`basketlens.queries`):** Orquestra a Visão 360º (`build_360_view(household_key)`) e as consultas analíticas das Perguntas de Negócio 1, 2, 3 e Bônus de Trade Marketing.
+5. **Consumo & Entregáveis:** Os 4 Jupyter Notebooks executáveis (`01` a `04`), a suíte automatizada E2E (`pytest`) e a documentação executiva.
+6. **Camada Transversal de Observabilidade & Governança Visual:** Inspeção em tempo real via **mongo-express** (`http://localhost:8081`), **cassandra-web** (`http://localhost:3000`), **redis-commander** (`http://localhost:8082`) e telemetria estruturada via **Loguru**.
 
 ### 1.1 Diagrama Mermaid da Arquitetura Integrada
 
@@ -99,32 +79,24 @@ flowchart TB
 
 ## 2. Dualidade Operacional: Modo A (Full Historical Load) vs. Modo B (Daily Event Replay)
 
+<p align="center">
+  <img src="assets/arch-operational-modes.svg" alt="BasketLens 360º — Dualidade Operacional: Modo A (Batch) vs. Modo B (Event Replay Dia a Dia)" width="100%"/>
+</p>
+
 Um desafio clássico ao trabalhar com datasets históricos fechados (`DAY` 1 a 711) é demonstrar o comportamento dinâmico de uma arquitetura de varejo em tempo real (expiração de TTL, invalidação de cache e rotação das últimas cestas). Para resolver isso com rigor de engenharia, o **BasketLens** opera em **dois modos complementares**:
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ MODO A — CARGA HISTÓRICA COMPLETA (Cold Path / Batch · Notebook 02)                             │
-│ • Processa os 2 anos completos (DAY 1..711 · Semana 1..102) via Polars streaming/batched        │
-│ • Popula os 2.500 domicílios no MongoDB, as 4 tabelas CQL no Cassandra e o estado de            │
-│   referência (REFERENCE_DAY = 650) no Redis                                                     │
-│ • Finalidade: Análises globais de 2 anos, Pergunta 3 (801 famílias) e Lift de Trade Marketing   │
-└─────────────────────────────────────────────────────────────────────────────────────────────────┘
-                                                │
-                                                ▼
-┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ MODO B — EVENT REPLAY DIA A DIA (Hot Path / Streaming Simulado · Notebook 03)                   │
-│ • Inicializa o baseline na véspera (prepare_replay_baseline(cutoff_day = 649))                  │
-│ • Avança o relógio operacional dia a dia (DAY = 650, 651, ..., 657) com SECONDS_PER_DAY = 5     │
-│ • A cada dia D, extrai via Polars scan_csv().filter(DAY == D) apenas os eventos daquele dia:    │
-│   1) Redis     : Atualiza TTL das campanhas ativas, expira campanhas encerradas (Campanha 22    │
-│                  expira após DAY 656) e processa resgates do dia (cupom 51800000050 no Dia 654) │
-│   2) Cassandra : Insere as compras do dia D em transactions_by_household e                      │
-│                  transactions_by_household_product + atualiza sales_by_product_week             │
-│   3) MongoDB   : Incrementa total_spend e total_baskets ($inc) e empurra as novas cestas em     │
-│                  recent_baskets mantendo estritamente as 5 mais recentes ($push + $slice: -5)   │
-│   4) Redis     : Invalida imediatamente o cache (DEL profile:{id}) dos domicílios que compraram │
-└─────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
+- **Modo A — Carga Histórica Completa (Cold Path / Batch · Notebook 02):**
+  - Processa os 2 anos completos (`DAY 1..711` · Semana `1..102`) via Polars `scan_csv(..., streaming=True)` e `read_csv_batched`.
+  - Popula os 2.500 domicílios na coleção `households` do MongoDB, as 4 tabelas CQL no Cassandra e o estado de referência (`REFERENCE_DAY = 650`) no Redis.
+  - **Finalidade:** Análises globais de 2 anos, Pergunta 3 (801 famílias com demografia) e Lift promocional de Trade Marketing.
+- **Modo B — Event Replay Dia a Dia (Hot Path / Streaming Simulado · Notebook 03):**
+  - Inicializa o baseline determinístico na véspera (`prepare_replay_baseline(cutoff_day = 649)`).
+  - Avança o relógio operacional dia a dia (`DAY = 650, 651, ..., 657`) com `SECONDS_PER_DAY = 5`.
+  - A cada dia `D`, extrai via `pl.scan_csv().filter(pl.col("DAY") == D)` apenas os eventos daquele dia:
+    1. **Redis:** Atualiza o `TTL` das campanhas ativas, expira campanhas encerradas (a Campanha 22 expira após `DAY 656`) e processa resgates do dia (como o cupom `51800000050` resgatado pelo domicílio `#208` no Dia 654).
+    2. **Cassandra:** Insere as compras do dia `D` em `transactions_by_household` e `transactions_by_household_product`, além de atualizar `sales_by_product_week`.
+    3. **MongoDB:** Incrementa `total_spend` e `total_baskets` (`$inc`) e empurra as novas cestas em `recent_baskets` mantendo estritamente as 5 mais recentes (`$push` + `$slice: -5`).
+    4. **Redis (Cache Invalidation):** Invalida imediatamente o cache (`DEL profile:{id}`) dos domicílios que realizaram compras ou resgates no dia.
 
 ### Regra Estrita *Zero Full-Dataset In-Memory*
 Em ambos os modos, **nenhum módulo carrega `transaction_data.csv` (141,7 MB) ou `causal_data.csv` (695,9 MB) inteiros em memória**:
@@ -211,6 +183,10 @@ Seguindo a convenção canônica `objeto:id` da disciplina, o Redis armazena 7 p
 
 ### 5.1 *"Onde entraria um banco de Grafos (Neo4j)?"*
 
+<p align="center">
+  <img src="assets/arch-neo4j-graph.svg" alt="BasketLens 360º — Modelo de Grafo de Propriedades no Neo4j" width="100%"/>
+</p>
+
 Embora MongoDB, Cassandra e Redis atendam integralmente às necessidades de **perfil**, **série temporal de transações** e **elegibilidade em tempo real**, um quarto motor orientado a **Grafos de Propriedades (Neo4j)** entraria como **sidecar analítico de recomendação e atribuição** sempre que a pergunta de negócio dependesse de **travessia multi-salto (*multi-hop traversal*)** sobre relacionamentos:
 
 ```mermaid
@@ -264,35 +240,15 @@ Nenhuma delas envolve caminhos de comprimento variável ou análise topológica 
 
 ### 5.3 Evolução para Produção Corporativa em Kubernetes (K8s)
 
+<p align="center">
+  <img src="assets/arch-kubernetes-production.svg" alt="BasketLens 360º — Evolução Corporativa em Produção no Kubernetes" width="100%"/>
+</p>
+
 Para elevar o **BasketLens** do ambiente Docker Compose local (single-node por banco) para uma operação real de uma rede varejista com 500+ lojas físicas e milhões de clientes, a arquitetura evolui para o **Kubernetes Operator Pattern**:
 
-```
-                             TOPOLOGIA KUBERNETES EM PRODUÇÃO (K8s)
- ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
- │                          INGRESS CONTROLLER / API GATEWAY (gRPC / REST)                     │
- └─────────────┬────────────────────────────────┬───────────────────────────────┬──────────────┘
-               │                                │                               │
-               ▼                                ▼                               ▼
-    ┌──────────────────────┐         ┌──────────────────────┐        ┌──────────────────────┐
-    │  K8ssandra Operator  │         │   MongoDB Operator   │        │ Redis Cluster Oper.  │
-    │ (StatefulSet 3+ nós) │         │  (ReplicaSet 3 nós)  │        │ (3 Masters + 3 Reps) │
-    │ • RF=3, LOCAL_QUORUM │         │ • 1 Primary, 2 Sec   │        │ • 16.384 Hash Slots  │
-    │ • NVMe Local SSD     │         │ • Sharding p/ Tier 3 │        │ • volatile-lru safe  │
-    │ • Backup S3 (Medusa) │         │ • PodAntiAffinity    │        │ • Sentinel Failover  │
-    └──────────────────────┘         └──────────────────────┘        └──────────────────────┘
-               ▲                                ▲                               ▲
-               │                                │                               │
- ┌─────────────┴────────────────────────────────┴───────────────────────────────┴──────────────┐
- │                        BARRAMENTO DE EVENTOS & PROCESSAMENTO DISTRIBUÍDO                    │
- │  • Strimzi Kafka Operator : Tópicos pos.transactions e pos.redemptions particionados        │
- │  • Change Data Capture    : Consumidores idempotentes + Outbox/CDC eliminando dual-write    │
- │  • Spark Operator / Polars: Jobs distribuídos em pods efêmeros (Argo Workflows + dlt)       │
- └─────────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-1. **Eliminação de *Dual-Write* via Kafka (Strimzi Operator):** Os PDVs publicam eventos no tópico Kafka `pos.transactions`; consumidores independentes atualizam o Cassandra, o MongoDB e invalidam o Redis de forma assíncrona, desacoplada e com *retry* garantido.
+1. **Eliminação de *Dual-Write* via Kafka (Strimzi Kafka Operator):** Os PDVs publicam eventos nos tópicos Kafka `pos.transactions` e `pos.redemptions`; consumidores idempotentes via Change Data Capture (Outbox/CDC) atualizam o Cassandra, o MongoDB e invalidam o Redis de forma assíncrona, desacoplada e com *retry* garantido.
 2. **Alta Disponibilidade e Consistência Real (`RF = 3`):**
-   - **K8ssandra Operator:** 3 nós em zonas de disponibilidade distintas com `replication_factor = 3` e leituras/escritas em `LOCAL_QUORUM`, suportadas por discos NVMe locais e backups incrementais no S3 via *Medusa*.
-   - **MongoDB Kubernetes Operator:** ReplicaSet de 3 membros com *failover* automático e escrita `w: "majority"`.
-   - **Redis Cluster Operator:** 6 pods (3 *masters* + 3 réplicas) com particionamento em 16.384 *hash slots* e política `volatile-lru`.
-3. **Orquestração Declarativa (Argo Workflows + `dlt`):** Jobs periódicos de reconciliação de resumos (`behavior_summary`) e enriquecimento externo (Open Food Facts / Open-Meteo) rodam em pods efêmeros orquestrados por `CronWorkflow` no Argo Workflows, mantendo governança GitOps fim a fim.
+   - **K8ssandra Operator:** StatefulSet de 3+ nós em zonas de disponibilidade distintas com `replication_factor = 3` (`RF = 3`) e leituras/escritas em `LOCAL_QUORUM`, suportadas por discos NVMe Local SSD e backups incrementais no S3 via *Medusa*.
+   - **MongoDB Kubernetes Operator:** ReplicaSet de 3 membros (1 Primary, 2 Secondaries) com `PodAntiAffinity`, *failover* automático e escrita `w: "majority"`.
+   - **Redis Cluster Operator:** 6 pods (3 *masters* + 3 réplicas) com particionamento em 16.384 *hash slots*, Sentinel Failover e política `volatile-lru`.
+3. **Orquestração Declarativa (Argo Workflows + `dlt`):** Jobs periódicos de reconciliação de resumos (`behavior_summary`), processamento distribuído em Polars/Spark e enriquecimento externo (Open Food Facts / Open-Meteo) rodam em pods efêmeros orquestrados por `CronWorkflow` no Argo Workflows, mantendo governança GitOps fim a fim.
