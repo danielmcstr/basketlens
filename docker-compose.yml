@@ -77,7 +77,7 @@ services:
       - basketlens-net
 
   cassandra-web:
-    image: delermando/cassandra-web:0.4.0
+    image: dcagatay/cassandra-web:0.5.0
     container_name: basketlens-cassandra-web
     restart: unless-stopped
     ports:
@@ -86,6 +86,12 @@ services:
       CASSANDRA_HOST: "cassandra"
       CASSANDRA_HOST_IP: "cassandra"
       CASSANDRA_PORT: "9042"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        grep -q "picker.when('5.')" /usr/local/bundle/gems/cassandra-driver-3.2.5/lib/cassandra/driver.rb || sed -i "s/picker.when('4.') do/picker.when('5.') do\n        Cluster::Schema::Fetchers::V3_0_x.new(schema_cql_type_parser, cluster_schema)\n      end\n      picker.when('4.') do/" /usr/local/bundle/gems/cassandra-driver-3.2.5/lib/cassandra/driver.rb
+        exec cassandra-web --hosts "`getent hosts cassandra | cut -d' ' -f1 | head -n 1`" --port 9042 --username cassandra --password cassandra
     depends_on:
       cassandra:
         condition: service_healthy
