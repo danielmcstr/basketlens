@@ -1,0 +1,273 @@
+2026-10-19 14:09:22.239Z: Host information
+2026-10-19 14:09:22.239Z: ----------------
+2026-10-19 14:09:22.239Z: OS: Ubuntu 22.04.5 LTS (stable release)
+2026-10-19 14:09:22.240Z: Image details: https://github.com/github/codespaces-host-images/blob/main/README.md
+2026-10-19 14:09:22.240Z: ----------------
+
+=================================================================================
+2026-10-19 14:09:22.242Z: Configuration starting...
+2026-10-19 14:09:22.254Z: Cloning...
+
+=================================================================================
+2026-10-19 14:09:24.184Z: Creating container...
+2026-10-19 14:09:24.226Z: $ devcontainer up --id-label Type=codespaces --workspace-folder /var/lib/docker/codespacemount/workspace/basketlens --mount type=bind,source=/.codespaces/agent/mount/cache,target=/vscode --user-data-folder /var/lib/docker/codespacemount/.persistedshare --container-data-folder .vscode-remote/data/Machine --container-system-data-folder /var/vscode-remote --log-level trace --log-format json --update-remote-user-uid-default never --mount-workspace-git-root false --omit-config-remote-env-from-metadata --skip-non-blocking-commands --skip-post-create --config "/var/lib/docker/codespacemount/workspace/basketlens/.devcontainer/devcontainer.json" --override-config /root/.codespaces/shared/merged_devcontainer.json --default-user-env-probe loginInteractiveShell --container-session-data-folder /workspaces/.codespaces/.persistedshare/devcontainers-cli/cache --secrets-file /root/.codespaces/shared/user-secrets-envs.json
+2026-10-19 14:09:24.414Z: @devcontainers/cli 0.83.3. Node.js v18.20.8. linux 6.8.0-1064-azure x64.
+2026-10-19 14:09:24.932Z: Resolving Feature dependencies for 'ghcr.io/devcontainers/features/docker-in-docker:2'...
+2026-10-19 14:09:25.317Z: Resolving Feature dependencies for 'ghcr.io/devcontainers/features/git-lfs:1'...
+2026-10-19 14:09:25.524Z: Soft-dependency 'ghcr.io/devcontainers/features/common-utils' is not required.  Removing from installation order...
+2026-10-19 14:09:25.524Z: Soft-dependency 'ghcr.io/devcontainers/features/common-utils' is not required.  Removing from installation order...
+2026-10-19 14:09:25.630Z: Files to omit: ''
+2026-10-19 14:09:25.746Z: Files to omit: ''
+2026-10-19 14:09:25.761Z: $1-3.12-bookworm --build-arg _DEV_CONTAINERS_IMAGE_USER=root --build-arg _DEV_CONTAINERS_FEATURE_CONTENT_SOURCE=dev_container_feature_content_temp --target dev_containers_target_stage -f /tmp/devcontainercli-root/container-features/0.83.3-1792418964929/Dockerfile.extended -t vsc-basketlens-a259c9695c045d1d1a0164ba75b3512cd7ad23477bd6bbc127301e075496505c-features /var/lib/docker/codespacemount/.persistedshare/empty-folder
+2026-10-19 14:09:26.338Z: #0 building with "default" instance using docker driver
+
+2026-10-19 14:09:26.338Z: #1 [internal] load .dockerignore
+2026-10-19 14:09:26.356Z: #1 transferring context: 2B 0.0s done
+#1 DONE 0.1s2026-10-19 14:09:26.356Z: 
+
+#2 [internal] load build definition from Dockerfile.extended
+#2 transferring dockerfile: 6.10kB 0.0s done
+#2 DONE 0.1s
+
+#3 [internal] load metadata for mcr.microsoft.com/devcontainers/python:1-3.12-bookworm
+2026-10-19 14:09:26.515Z: #3 ...
+
+#4 [context dev_containers_feature_content_source] load .dockerignore
+2026-10-19 14:09:26.515Z: #4 transferring dev_containers_feature_content_source: 2B done
+#4 DONE 0.0s
+2026-10-19 14:09:26.610Z: 
+#3 [internal] load metadata for mcr.microsoft.com/devcontainers/python:1-3.12-bookworm
+#3 DONE 0.3s
+2026-10-19 14:09:26.770Z: 
+#5 [context dev_containers_feature_content_source] load from client
+#5 transferring dev_containers_feature_content_source: 97.75kB done
+#5 DONE 0.0s
+
+#6 [dev_containers_feature_content_normalize 1/3] FROM mcr.microsoft.com/devcontainers/python:1-3.12-bookworm@sha256:7876580dc67fd460fd962f004cbeb480027e9bbc0657096f1087db11f9eaff39
+2026-10-19 14:09:26.770Z: #6 resolve mcr.microsoft.com/devcontainers/python:1-3.12-bookworm@sha256:7876580dc67fd460fd962f004cbeb480027e9bbc0657096f1087db11f9eaff39 0.0s done
+#6 sha256:7bbf972c6c2f5b7313ae3cb74e63888ab70931bcd9aefd960f9a38c540dbf2ca 5.24MB / 24.02MB 0.1s
+#6 sha256:ca7b20585cf65295cd0cef8ae8f02a008c1c85e83909d1e2af8d19706d3f34ee 3.54kB / 3.54kB done
+#6 sha256:8adb231de276bf2178265e634e73373a1999652542c8e580ee77cd09e8eb97de 23.60kB / 23.60kB done
+#6 sha256:7876580dc67fd460fd962f004cbeb480027e9bbc0657096f1087db11f9eaff39 1.61kB / 1.61kB done
+#6 sha256:c1995213564325caf7e52ecd95fe4435c70b03eb94c674ac15706733986b86e0 0B / 48.49MB 0.1s2026-10-19 14:09:26.770Z: 
+#6 sha256:900e2c02f17f686733f4f957ddfb07b3342d1957d87b56254634d4fbb2abb81d 2.10MB / 64.40MB 0.1s
+2026-10-19 14:09:26.885Z: #6 sha256:7bbf972c6c2f5b7313ae3cb74e63888ab70931bcd9aefd960f9a38c540dbf2ca 22.02MB / 24.02MB 0.2s
+#6 sha256:c1995213564325caf7e52ecd95fe4435c70b03eb94c674ac15706733986b86e0 15.02MB / 48.49MB 0.2s
+#6 sha256:900e2c02f17f686733f4f957ddfb07b3342d1957d87b56254634d4fbb2abb81d 25.17MB / 64.40MB 0.2s
+2026-10-19 14:09:27.069Z: #6 sha256:7bbf972c6c2f5b7313ae3cb74e63888ab70931bcd9aefd960f9a38c540dbf2ca 24.02MB / 24.02MB 0.4s
+#6 sha256:c1995213564325caf7e52ecd95fe4435c70b03eb94c674ac15706733986b86e0 48.49MB / 48.49MB 0.4s
+#6 sha256:900e2c02f17f686733f4f957ddfb07b3342d1957d87b56254634d4fbb2abb81d 63.96MB / 64.40MB 0.4s
+2026-10-19 14:09:27.568Z: #6 sha256:7bbf972c6c2f5b7313ae3cb74e63888ab70931bcd9aefd960f9a38c540dbf2ca 24.02MB / 24.02MB 0.9s done
+#6 sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c 0B / 211.37MB 0.9s
+2026-10-19 14:09:27.768Z: #6 sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c 13.63MB / 211.37MB 1.1s
+2026-10-19 14:09:28.069Z: #6 sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c 57.67MB / 211.37MB 1.4s
+2026-10-19 14:09:28.268Z: #6 sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c 99.61MB / 211.37MB 1.6s
+2026-10-19 14:09:28.368Z: #6 sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c 120.59MB / 211.37MB 1.7s2026-10-19 14:09:28.369Z: 
+2026-10-19 14:09:28.469Z: #6 sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c 142.61MB / 211.37MB 1.8s
+2026-10-19 14:09:28.570Z: #6 sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c 161.48MB / 211.37MB 1.9s
+2026-10-19 14:09:28.770Z: #6 sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c 197.13MB / 211.37MB 2.1s
+2026-10-19 14:09:28.968Z: #6 sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c 211.37MB / 211.37MB 2.3s
+2026-10-19 14:09:31.961Z: #6 sha256:c1995213564325caf7e52ecd95fe4435c70b03eb94c674ac15706733986b86e0 48.49MB / 48.49MB 5.2s done2026-10-19 14:09:31.961Z: 
+2026-10-19 14:09:31.962Z: #6 sha256:900e2c02f17f686733f4f957ddfb07b3342d1957d87b56254634d4fbb2abb81d 64.40MB / 64.40MB 5.2s done
+#6 sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c 211.37MB / 211.37MB 5.2s done
+#6 extracting sha256:c1995213564325caf7e52ecd95fe4435c70b03eb94c674ac15706733986b86e0
+2026-10-19 14:09:32.068Z: #6 sha256:6cba66ca3410cee5d13e3d4425bd2912f2ed7c9b51823dee29dccbf728cd4712 6.16MB / 6.16MB 5.4s
+#6 sha256:71d58a2f05b2962ac5f51037d78fc3bc2acff5d661d46d2fd1ecdd72d3d95de5 249B / 249B 5.2s done
+#6 sha256:b3aa348678a1b29e9754e8b857e23d4857cceb2ede7b11a077df57454d673f31 15.43MB / 15.43MB 5.4s
+2026-10-19 14:09:32.068Z: #6 sha256:88adae8068755df7f849b55854d0236eca18115346d0947c9e87f0a839618d6e 25.64MB / 25.64MB 5.4s
+2026-10-19 14:09:33.168Z: #6 sha256:6cba66ca3410cee5d13e3d4425bd2912f2ed7c9b51823dee29dccbf728cd4712 6.16MB / 6.16MB 6.3s done
+#6 sha256:b3aa348678a1b29e9754e8b857e23d4857cceb2ede7b11a077df57454d673f31 15.43MB / 15.43MB 6.4s done
+#6 sha256:88adae8068755df7f849b55854d0236eca18115346d0947c9e87f0a839618d6e 25.64MB / 25.64MB 6.4s done
+#6 sha256:92e7a315d167f528844ca5e9582d439bdf42d7e0a5c5afabc539ed27906f788f 414B / 414B 6.4s done
+#6 sha256:3ea645c2d7aa7a5ac6c1ec389eb26ee2dab871d549125530e814e293acab5911 0B / 50.86MB 6.5s
+#6 sha256:147b7e13a61f018ed52a15223e079c6443eb2da9ed9957ce451f2c6b1837163c 8.62MB / 8.62MB 6.5s
+#6 sha256:e8b51ce0d0f77701f10b43a86b467f613cd0f95070868a30502b65006a5e6af4 134B / 134B 6.4s done
+#6 sha256:552b94a43e8b7c7e5a7de943641d6e823cecc2d22c883b8129207b32334aa749 224B / 224B 6.5s done
+#6 sha256:462856c69d90c540029d6218b1f447ebc8cc122878f49ac879f74abce8329fa9 233B / 233B 6.5s
+2026-10-19 14:09:33.268Z: #6 sha256:3ea645c2d7aa7a5ac6c1ec389eb26ee2dab871d549125530e814e293acab5911 15.73MB / 50.86MB 6.6s
+2026-10-19 14:09:33.373Z: #6 sha256:3ea645c2d7aa7a5ac6c1ec389eb26ee2dab871d549125530e814e293acab5911 38.80MB / 50.86MB 6.7s
+2026-10-19 14:09:33.373Z: #6 sha256:147b7e13a61f018ed52a15223e079c6443eb2da9ed9957ce451f2c6b1837163c 8.62MB / 8.62MB 6.7s done
+2026-10-19 14:09:33.500Z: #6 sha256:3ea645c2d7aa7a5ac6c1ec389eb26ee2dab871d549125530e814e293acab5911 50.86MB / 50.86MB 6.8s
+#6 sha256:462856c69d90c540029d6218b1f447ebc8cc122878f49ac879f74abce8329fa9 233B / 233B 6.7s done
+#6 sha256:b4b4e6304c0574ebe10146a0ffdb5c7b1673e80e48d216a61ac474430254c5b7 2.32MB / 2.32MB 6.8s
+#6 sha256:a648aca30351fa6c5ecf8c53ceafc4da1dc16847ff4a16d49aa1d21d55a40d8c 10.49MB / 66.02MB 6.8s
+2026-10-19 14:09:33.614Z: #6 sha256:a648aca30351fa6c5ecf8c53ceafc4da1dc16847ff4a16d49aa1d21d55a40d8c 33.55MB / 66.02MB 6.9s
+2026-10-19 14:09:33.768Z: #6 sha256:a648aca30351fa6c5ecf8c53ceafc4da1dc16847ff4a16d49aa1d21d55a40d8c 56.62MB / 66.02MB 7.1s
+2026-10-19 14:09:33.968Z: #6 sha256:a648aca30351fa6c5ecf8c53ceafc4da1dc16847ff4a16d49aa1d21d55a40d8c 66.02MB / 66.02MB 7.3s
+2026-10-19 14:09:34.268Z: #6 extracting sha256:c1995213564325caf7e52ecd95fe4435c70b03eb94c674ac15706733986b86e0 2.2s done
+2026-10-19 14:09:34.768Z: #6 sha256:3ea645c2d7aa7a5ac6c1ec389eb26ee2dab871d549125530e814e293acab5911 50.86MB / 50.86MB 7.8s done
+#6 sha256:b4b4e6304c0574ebe10146a0ffdb5c7b1673e80e48d216a61ac474430254c5b7 2.32MB / 2.32MB 7.9s done
+2026-10-19 14:09:35.568Z: #6 sha256:a648aca30351fa6c5ecf8c53ceafc4da1dc16847ff4a16d49aa1d21d55a40d8c 66.02MB / 66.02MB 8.8s done
+#6 extracting sha256:7bbf972c6c2f5b7313ae3cb74e63888ab70931bcd9aefd960f9a38c540dbf2ca
+#6 sha256:3528df54205e18098efed7a0da270f2367b298abd61825b39de44ad280bfab00 7.90MB / 71.64MB 8.9s
+2026-10-19 14:09:35.737Z: #6 sha256:3528df54205e18098efed7a0da270f2367b298abd61825b39de44ad280bfab00 26.21MB / 71.64MB 9.0s
+2026-10-19 14:09:35.837Z: #6 sha256:3528df54205e18098efed7a0da270f2367b298abd61825b39de44ad280bfab00 48.23MB / 71.64MB 9.1s
+2026-10-19 14:09:35.942Z: #6 sha256:3528df54205e18098efed7a0da270f2367b298abd61825b39de44ad280bfab00 69.38MB / 71.64MB 9.2s
+2026-10-19 14:09:36.171Z: #6 extracting sha256:7bbf972c6c2f5b7313ae3cb74e63888ab70931bcd9aefd960f9a38c540dbf2ca 0.6s done
+2026-10-19 14:09:39.637Z: #6 extracting sha256:900e2c02f17f686733f4f957ddfb07b3342d1957d87b56254634d4fbb2abb81d
+2026-10-19 14:09:39.740Z: #6 sha256:3528df54205e18098efed7a0da270f2367b298abd61825b39de44ad280bfab00 71.64MB / 71.64MB 12.8s done2026-10-19 14:09:39.740Z: 
+2026-10-19 14:09:41.858Z: #6 extracting sha256:900e2c02f17f686733f4f957ddfb07b3342d1957d87b56254634d4fbb2abb81d 2.1s done
+2026-10-19 14:09:44.658Z: #6 extracting sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c
+2026-10-19 14:09:49.727Z: #6 extracting sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c 5.1s
+2026-10-19 14:09:49.967Z: #6 extracting sha256:abe9c1abe6f3b8ca9fc6abe710405f830f95262f1d356e8f6545d823b5840a5c 5.2s done
+2026-10-19 14:09:58.898Z: #6 extracting sha256:6cba66ca3410cee5d13e3d4425bd2912f2ed7c9b51823dee29dccbf728cd4712
+2026-10-19 14:09:59.288Z: #6 extracting sha256:6cba66ca3410cee5d13e3d4425bd2912f2ed7c9b51823dee29dccbf728cd4712 0.2s done
+2026-10-19 14:09:59.490Z: #6 extracting sha256:88adae8068755df7f849b55854d0236eca18115346d0947c9e87f0a839618d6e
+2026-10-19 14:10:00.281Z: #6 extracting sha256:88adae8068755df7f849b55854d0236eca18115346d0947c9e87f0a839618d6e 0.6s done
+2026-10-19 14:10:01.235Z: #6 extracting sha256:71d58a2f05b2962ac5f51037d78fc3bc2acff5d661d46d2fd1ecdd72d3d95de5
+2026-10-19 14:10:01.365Z: #6 extracting sha256:71d58a2f05b2962ac5f51037d78fc3bc2acff5d661d46d2fd1ecdd72d3d95de5 done
+#6 extracting sha256:b3aa348678a1b29e9754e8b857e23d4857cceb2ede7b11a077df57454d673f31 0.1s
+2026-10-19 14:10:01.466Z: #6 extracting sha256:b3aa348678a1b29e9754e8b857e23d4857cceb2ede7b11a077df57454d673f31 0.2s done
+2026-10-19 14:10:01.793Z: #6 extracting sha256:147b7e13a61f018ed52a15223e079c6443eb2da9ed9957ce451f2c6b1837163c
+2026-10-19 14:10:02.431Z: #6 extracting sha256:147b7e13a61f018ed52a15223e079c6443eb2da9ed9957ce451f2c6b1837163c 0.5s done
+2026-10-19 14:10:02.716Z: #6 extracting sha256:92e7a315d167f528844ca5e9582d439bdf42d7e0a5c5afabc539ed27906f788f
+2026-10-19 14:10:02.869Z: #6 extracting sha256:92e7a315d167f528844ca5e9582d439bdf42d7e0a5c5afabc539ed27906f788f done
+#6 extracting sha256:e8b51ce0d0f77701f10b43a86b467f613cd0f95070868a30502b65006a5e6af4 done
+#6 extracting sha256:552b94a43e8b7c7e5a7de943641d6e823cecc2d22c883b8129207b32334aa749 done
+2026-10-19 14:10:02.869Z: #6 extracting sha256:462856c69d90c540029d6218b1f447ebc8cc122878f49ac879f74abce8329fa9 done
+#6 extracting sha256:3ea645c2d7aa7a5ac6c1ec389eb26ee2dab871d549125530e814e293acab5911
+2026-10-19 14:10:05.886Z: #6 extracting sha256:3ea645c2d7aa7a5ac6c1ec389eb26ee2dab871d549125530e814e293acab5911 2.9s done
+2026-10-19 14:10:07.939Z: #6 extracting sha256:a648aca30351fa6c5ecf8c53ceafc4da1dc16847ff4a16d49aa1d21d55a40d8c
+2026-10-19 14:10:08.930Z: #6 extracting sha256:a648aca30351fa6c5ecf8c53ceafc4da1dc16847ff4a16d49aa1d21d55a40d8c 0.8s done
+2026-10-19 14:10:10.868Z: #6 extracting sha256:b4b4e6304c0574ebe10146a0ffdb5c7b1673e80e48d216a61ac474430254c5b7
+2026-10-19 14:10:11.170Z: #6 extracting sha256:b4b4e6304c0574ebe10146a0ffdb5c7b1673e80e48d216a61ac474430254c5b7 0.2s done
+2026-10-19 14:10:11.278Z: #6 extracting sha256:3528df54205e18098efed7a0da270f2367b298abd61825b39de44ad280bfab00
+2026-10-19 14:10:14.794Z: #6 extracting sha256:3528df54205e18098efed7a0da270f2367b298abd61825b39de44ad280bfab00 3.5s done
+2026-10-19 14:10:18.599Z: #6 DONE 52.0s
+2026-10-19 14:10:18.809Z: 
+2026-10-19 14:10:18.810Z: #7 [dev_containers_feature_content_normalize 2/3] COPY --from=dev_containers_feature_content_source devcontainer-features.builtin.env /tmp/build-features/
+#7 DONE 0.0s
+
+#8 [dev_containers_feature_content_normalize 3/3] RUN chmod -R 0755 /tmp/build-features/
+2026-10-19 14:10:18.932Z: #8 DONE 0.3s
+
+#9 [dev_containers_target_stage 2/6] RUN mkdir -p /tmp/dev-container-features
+2026-10-19 14:10:19.157Z: #9 DONE 0.3s
+
+#10 [dev_containers_target_stage 3/6] COPY --from=dev_containers_feature_content_normalize /tmp/build-features/ /tmp/dev-container-features
+2026-10-19 14:10:19.157Z: #10 DONE 0.1s
+
+#11 [dev_containers_target_stage 4/6] RUN echo "_CONTAINER_USER_HOME=$( (command -v getent >/dev/null 2>&1 && getent passwd 'root' || grep -E '^root|^[^:]*:[^:]*:root:' /etc/passwd || ********) | cut -d: -f6)" >> /tmp/dev-container-features/devcontainer-features.builtin.env && echo "_REMOTE_USER_HOME=$( (command -v getent >/dev/null 2>&1 && getent passwd 'vscode' || grep -E '^vscode|^[^:]*:[^:]*:vscode:' /etc/passwd || ********) | cut -d: -f6)" >> /tmp/dev-container-features/devcontainer-features.builtin.env
+2026-10-19 14:10:19.204Z: #11 DONE 0.2s
+2026-10-19 14:10:19.356Z: 
+#12 [dev_containers_target_stage 5/6] RUN --mount=type=bind,from=dev_containers_feature_content_source,source=docker-in-docker_0,target=/tmp/build-features-src/docker-in-docker_0     cp -ar /tmp/build-features-src/docker-in-docker_0 /tmp/dev-container-features  && chmod -R 0755 /tmp/dev-container-features/docker-in-docker_0  && cd /tmp/dev-container-features/docker-in-docker_0  && chmod +x ./devcontainer-features-install.sh  && ./devcontainer-features-install.sh  && rm -rf /tmp/dev-container-features/docker-in-docker_0
+2026-10-19 14:10:19.413Z: #12 0.208 ===========================================================================
+2026-10-19 14:10:19.413Z: #12 0.208 Feature       : Docker (Docker-in-Docker)
+#12 0.208 Description   : Create child containers *inside* a container, independent from the host's docker instance. Installs Docker extension in the container along with needed CLIs.
+#12 0.208 Id            : ghcr.io/devcontainers/features/docker-in-docker
+#12 0.208 Version       : 2.17.0
+#12 0.208 Documentation : ********/devcontainers/features/tree/main/src/docker-in-docker
+#12 0.208 Options       :
+#12 0.208     VERSION="latest"
+#12 0.208     MOBY="********"
+#12 0.208     MOBYBUILDXVERSION="latest"
+#12 0.208     DOCKERDASHCOMPOSEVERSION="v2"
+#12 0.208     AZUREDNSAUTODETECTION="********"
+#12 0.208     DOCKERDEFAULTADDRESSPOOL=""
+#12 0.208     INSTALLDOCKERBUILDX="********"
+#12 0.208     INSTALLDOCKERCOMPOSESWITCH="false"
+#12 0.208     DISABLEIP6TABLES="false"
+#12 0.208 ===========================================================================
+2026-10-19 14:10:19.523Z: #12 0.221 (*) bookworm is supported for Moby installation  - setting up Microsoft repository
+#12 0.230 find: ‘/var/lib/apt/lists/*’: No such file or directory
+2026-10-19 14:10:19.523Z: #12 0.231 Running apt-get update...
+#12 0.301 Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+#12 0.318 Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+2026-10-19 14:10:19.663Z: #12 0.325 Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [34.8 kB]2026-10-19 14:10:19.663Z: 
+#12 0.361 Get:4 https://dl.yarnpkg.com/debian stable InRelease
+#12 0.393 Get:5 http://deb.debian.org/debian bookworm/main amd64 Packages [8790 kB]
+#12 0.458 Get:6 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B]
+2026-10-19 14:10:19.912Z: #12 0.516 Get:7 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [354 kB]
+#12 0.557 Err:4 https://dl.yarnpkg.com/debian stable InRelease
+#12 0.557   The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 62D54FD4003F6525
+2026-10-19 14:10:20.433Z: #12 1.228 Reading package lists...2026-10-19 14:10:20.839Z: 
+2026-10-19 14:10:21.003Z: #12 1.646 W: GPG error: https://dl.yarnpkg.com/debian stable InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 62D54FD4003F6525
+#12 1.646 E: The repository 'https://dl.yarnpkg.com/debian stable InRelease' is not signed.
+#12 1.647 ERROR: Feature "Docker (Docker-in-Docker)" (ghcr.io/devcontainers/features/docker-in-docker) failed to install! Look at the documentation at ********/devcontainers/features/tree/main/src/docker-in-docker for help troubleshooting this error.
+2026-10-19 14:10:21.240Z: #12 ERROR: process "/bin/sh -c cp -ar /tmp/build-features-src/docker-in-docker_0 /tmp/dev-container-features  && chmod -R 0755 /tmp/dev-container-features/docker-in-docker_0  && cd /tmp/dev-container-features/docker-in-docker_0  && chmod +x ./devcontainer-features-install.sh  && ./devcontainer-features-install.sh  && rm -rf /tmp/dev-container-features/docker-in-docker_0" did not complete successfully: exit code: 100
+2026-10-19 14:10:21.331Z: ------
+ > [dev_containers_target_stage 5/6] RUN --mount=type=bind,from=dev_containers_feature_content_source,source=docker-in-docker_0,target=/tmp/build-features-src/docker-in-docker_0     cp -ar /tmp/build-features-src/docker-in-docker_0 /tmp/dev-container-features  && chmod -R 0755 /tmp/dev-container-features/docker-in-docker_0  && cd /tmp/dev-container-features/docker-in-docker_0  && chmod +x ./devcontainer-features-install.sh  && ./devcontainer-features-install.sh  && rm -rf /tmp/dev-container-features/docker-in-docker_0:
+0.361 Get:4 https://dl.yarnpkg.com/debian stable InRelease
+0.393 Get:5 http://deb.debian.org/debian bookworm/main amd64 Packages [8790 kB]
+2026-10-19 14:10:21.332Z: 0.458 Get:6 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B]
+0.516 Get:7 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [354 kB]
+0.557 Err:4 https://dl.yarnpkg.com/debian stable InRelease
+0.557   The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 62D54FD4003F6525
+
+1.646 W: GPG error: https://dl.yarnpkg.com/debian stable InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 62D54FD4003F6525
+1.646 E: The repository 'https://dl.yarnpkg.com/debian stable InRelease' is not signed.
+1.647 ERROR: Feature "Docker (Docker-in-Docker)" (ghcr.io/devcontainers/features/docker-in-docker) failed to install! Look at the documentation at ********/devcontainers/features/tree/main/src/docker-in-docker for help troubleshooting this error.
+------
+2026-10-19 14:10:21.332Z: Dockerfile.extended:24
+--------------------
+  23 |     ENV DOCKER_BUILDKIT="1"
+  24 | >>> RUN --mount=type=bind,from=dev_containers_feature_content_source,source=docker-in-docker_0,target=/tmp/build-features-src/docker-in-docker_0 \
+  25 | >>>     cp -ar /tmp/build-features-src/docker-in-docker_0 /tmp/dev-container-features \
+  26 | >>>  && chmod -R 0755 /tmp/dev-container-features/docker-in-docker_0 \
+  27 | >>>  && cd /tmp/dev-container-features/docker-in-docker_0 \
+  28 | >>>  && chmod +x ./devcontainer-features-install.sh \
+  29 | >>>  && ./devcontainer-features-install.sh \
+  30 | >>>  && rm -rf /tmp/dev-container-features/docker-in-docker_0
+  31 |     
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c cp -ar /tmp/build-features-src/docker-in-docker_0 /tmp/dev-container-features  && chmod -R 0755 /tmp/dev-container-features/docker-in-docker_0  && cd /tmp/dev-container-features/docker-in-docker_0  && chmod +x ./devcontainer-features-install.sh  && ./devcontainer-features-install.sh  && rm -rf /tmp/dev-container-features/docker-in-docker_0" did not complete successfully: exit code: 100
+2026-10-19 14:10:21.338Z: Stop: Run: docker buildx build --load --build-arg BUILDKIT_INLINE_CACHE=1 --build-context dev_containers_feature_content_source=/tmp/devcontainercli-root/container-features/0.83.3-1792418964929 --build-arg _DEV_CONTAINERS_BASE_IMAGE=mcr.microsoft.com/devcontainers/python:1-3.12-bookworm --build-arg _DEV_CONTAINERS_IMAGE_USER=root --build-arg _DEV_CONTAINERS_FEATURE_CONTENT_SOURCE=dev_container_feature_content_temp --target dev_containers_target_stage -f /tmp/devcontainercli-root/container-features/0.83.3-1792418964929/Dockerfile.extended -t vsc-basketlens-a259c9695c045d1d1a0164ba75b3512cd7ad23477bd6bbc127301e075496505c-features /var/lib/docker/codespacemount/.persistedshare/empty-folder
+2026-10-19 14:10:21.340Z: Error: Command failed: docker buildx build --load --build-arg BUILDKIT_INLINE_CACHE=1 --build-context dev_containers_feature_content_source=/tmp/devcontainercli-root/container-features/0.83.3-1792418964929 --build-arg _DEV_CONTAINERS_BASE_IMAGE=mcr.microsoft.com/devcontainers/python:1-3.12-bookworm --build-arg _DEV_CONTAINERS_IMAGE_USER=root --build-arg _DEV_CONTAINERS_FEATURE_CONTENT_SOURCE=dev_container_feature_content_temp --target dev_containers_target_stage -f /tmp/devcontainercli-root/container-features/0.83.3-1792418964929/Dockerfile.extended -t vsc-basketlens-a259c9695c045d1d1a0164ba75b3512cd7ad23477bd6bbc127301e075496505c-features /var/lib/docker/codespacemount/.persistedshare/empty-folder
+2026-10-19 14:10:21.340Z: {"outcome":"error","message":"Command failed: docker buildx build --load --build-arg BUILDKIT_INLINE_CACHE=1 --build-context dev_containers_feature_content_source=/tmp/devcontainercli-root/container-features/0.83.3-1792418964929 --build-arg _DEV_CONTAINERS_BASE_IMAGE=mcr.microsoft.com/devcontainers/python:1-3.12-bookworm --build-arg _DEV_CONTAINERS_IMAGE_USER=root --build-arg _DEV_CONTAINERS_FEATURE_CONTENT_SOURCE=dev_container_feature_content_temp --target dev_containers_target_stage -f /tmp/devcontainercli-root/container-features/0.83.3-1792418964929/Dockerfile.extended -t vsc-basketlens-a259c9695c045d1d1a0164ba75b3512cd7ad23477bd6bbc127301e075496505c-features /var/lib/docker/codespacemount/.persistedshare/empty-folder","description":"An error occurred setting up the container."}
+2026-10-19 14:10:21.340Z:     at U9 (/.codespaces/agent/bin/node_modules/@devcontainers/cli/dist/spec-node/devContainersSpecCLI.js:467:1277)
+2026-10-19 14:10:21.340Z:     at RL (/.codespaces/agent/bin/node_modules/@devcontainers/cli/dist/spec-node/devContainersSpecCLI.js:467:1021)
+2026-10-19 14:10:21.341Z:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-10-19 14:10:21.341Z:     at async AZ (/.codespaces/agent/bin/node_modules/@devcontainers/cli/dist/spec-node/devContainersSpecCLI.js:485:3870)
+2026-10-19 14:10:21.341Z:     at async uC (/.codespaces/agent/bin/node_modules/@devcontainers/cli/dist/spec-node/devContainersSpecCLI.js:485:4989)
+2026-10-19 14:10:21.341Z:     at async L5 (/.codespaces/agent/bin/node_modules/@devcontainers/cli/dist/spec-node/devContainersSpecCLI.js:666:205)
+2026-10-19 14:10:21.342Z:     at async G5 (/.codespaces/agent/bin/node_modules/@devcontainers/cli/dist/spec-node/devContainersSpecCLI.js:665:15084)
+2026-10-19 14:10:21.342Z:     at async /.codespaces/agent/bin/node_modules/@devcontainers/cli/dist/spec-node/devContainersSpecCLI.js:485:1188
+2026-10-19 14:10:21.346Z: devcontainer process exited with exit code 1
+
+====================================== ERROR ====================================
+2026-10-19 14:10:21.352Z: Failed to create container.
+=================================================================================
+2026-10-19 14:10:21.352Z: Error: Command failed: docker buildx build --load --build-arg BUILDKIT_INLINE_CACHE=1 --build-context dev_containers_feature_content_source=/tmp/devcontainercli-root/container-features/0.83.3-1792418964929 --build-arg _DEV_CONTAINERS_BASE_IMAGE=mcr.microsoft.com/devcontainers/python:1-3.12-bookworm --build-arg _DEV_CONTAINERS_IMAGE_USER=root --build-arg _DEV_CONTAINERS_FEATURE_CONTENT_SOURCE=dev_container_feature_content_temp --target dev_containers_target_stage -f /tmp/devcontainercli-root/container-features/0.83.3-1792418964929/Dockerfile.extended -t vsc-basketlens-a259c9695c045d1d1a0164ba75b3512cd7ad23477bd6bbc127301e075496505c-features /var/lib/docker/codespacemount/.persistedshare/empty-folder
+2026-10-19 14:10:21.354Z: Error code: 1302 (UnifiedContainersErrorFatalCreatingContainer)
+
+====================================== ERROR ====================================
+2026-10-19 14:10:21.364Z: Container creation failed.
+=================================================================================
+2026-10-19 14:10:21.376Z: 
+
+===================================== WARNING ===================================
+2026-10-19 14:10:21.377Z: Creating recovery container.
+=================================================================================
+
+=================================================================================
+2026-10-19 14:11:13.832Z: Creating container...
+2026-10-19 14:11:13.851Z: $ devcontainer up --id-label Type=codespaces --workspace-folder /var/lib/docker/codespacemount/workspace/basketlens --mount type=bind,source=/.codespaces/agent/mount/cache,target=/vscode --user-data-folder /var/lib/docker/codespacemount/.persistedshare --container-data-folder .vscode-remote/data/Machine --container-system-data-folder /var/vscode-remote --log-level trace --log-format json --update-remote-user-uid-default never --mount-workspace-git-root false --omit-config-remote-env-from-metadata --skip-non-blocking-commands --skip-post-create --config "/var/lib/docker/codespacemount/workspace/basketlens/.devcontainer/devcontainer.json" --override-config /root/.codespaces/shared/merged_devcontainer.json --default-user-env-probe loginInteractiveShell --container-session-data-folder /workspaces/.codespaces/.persistedshare/devcontainers-cli/cache --secrets-file /root/.codespaces/shared/user-secrets-envs.json
+2026-10-19 14:11:13.994Z: @devcontainers/cli 0.83.3. Node.js v18.20.8. linux 6.8.0-1064-azure x64.
+2026-10-19 14:11:14.427Z: $alpine -c echo Container started
+2026-10-19 14:11:14.444Z: Unable to find image 'mcr.microsoft.com/devcontainers/base:alpine' locally
+2026-10-19 14:11:14.598Z: alpine: Pulling from devcontainers/base
+2026-10-19 14:11:14.647Z: 
+[1A[2Kd0c1d894c237: Pulling fs layer [1B
+[1A[2K5b6175bd7c44: Pulling fs layer [1B
+[1A[2K07d77b9465d1: Pulling fs layer [1B
+[1A[2K09bd642602a2: Pulling fs layer [1B
+[1A[2K4abf96649ed6: Pulling fs layer [1B
+[1A[2Kfcb2d9375697: Pulling fs layer [1B
+[1A[2K8da26f23d120: Pulling fs layer [1B[4A[2K09bd642602a2: Waiting [4B[3A[2K4abf96649ed6: Waiting [3B[2A[2Kfcb2d9375697: 2026-10-19 14:11:14.648Z: Waiting [2B[1A[2K8da26f23d120: Waiting [1B2026-10-19 14:11:14.759Z: [7A[2Kd0c1d894c237: Downloading  48.35kB/3.849MB[7B2026-10-19 14:11:14.766Z: [6A[2K5b6175bd7c44: 2026-10-19 14:11:14.766Z: Downloading     409B/409B[6B[6A[2K5b6175bd7c44: Verifying Checksum [6B[6A2026-10-19 14:11:14.767Z: [2K5b6175bd7c44: Download complete [6B2026-10-19 14:11:14.770Z: [5A[2K07d77b9465d1: 2026-10-19 14:11:14.770Z: Downloading     135B/135B[5B[5A[2K07d77b9465d1: Verifying Checksum [5B2026-10-19 14:11:14.771Z: [5A[2K07d77b9465d1: Download complete [5B2026-10-19 14:11:14.797Z: [7A[2K2026-10-19 14:11:14.797Z: d0c1d894c237: Verifying Checksum [7B[7A[2Kd0c1d894c237: Download complete [7B2026-10-19 14:11:14.798Z: [7A[2K2026-10-19 14:11:14.801Z: d0c1d894c237: Extracting  65.54kB/3.849MB[7B2026-10-19 14:11:14.860Z: [4A[2K2026-10-19 14:11:14.860Z: 09bd642602a2: Downloading     223B/223B[4B[4A[2K09bd642602a2: Verifying Checksum [4B[4A[2K09bd642602a2: Download complete [4B2026-10-19 14:11:14.897Z: [3A[2K4abf96649ed6: Downloading     237B/237B[3B2026-10-19 14:11:14.898Z: [3A[2K4abf96649ed6: Verifying Checksum [3B[3A[2K4abf96649ed6: Download complete [3B2026-10-19 14:11:14.918Z: [2A[2Kfcb2d9375697: Downloading  538.7kB/61.55MB[2B2026-10-19 14:11:14.961Z: [1A[2K8da26f23d120: 2026-10-19 14:11:14.962Z: Downloading  538.7kB/218.3MB[1B2026-10-19 14:11:15.022Z: [2A[2Kfcb2d9375697: 2026-10-19 14:11:15.022Z: Downloading  17.83MB/61.55MB[2B2026-10-19 14:11:15.064Z: [1A[2K8da26f23d120: Downloading  21.07MB/218.3MB[1B2026-10-19 14:11:15.072Z: [7A[2Kd0c1d894c237: Extracting  262.1kB/3.849MB[7B2026-10-19 14:11:15.124Z: [2A[2Kfcb2d9375697: Downloading  36.75MB/61.55MB[2B2026-10-19 14:11:15.164Z: [1A[2K8da26f23d120: Downloading  40.53MB/218.3MB[1B2026-10-19 14:11:15.173Z: [7A[2Kd0c1d894c237: Extracting  3.211MB/3.849MB[7B2026-10-19 14:11:15.186Z: [7A2026-10-19 14:11:15.186Z: [2Kd0c1d894c237: Extracting  3.849MB/3.849MB[7B2026-10-19 14:11:15.187Z: [7A[2Kd0c1d894c237: 2026-10-19 14:11:15.187Z: Extracting  3.849MB/3.849MB[7B2026-10-19 14:11:15.223Z: [2A[2Kfcb2d9375697: Downloading  51.35MB/61.55MB[2B2026-10-19 14:11:15.236Z: [7A[2K2026-10-19 14:11:15.237Z: d0c1d894c237: Pull complete [7B2026-10-19 14:11:15.244Z: [6A[2K5b6175bd7c44: Extracting     409B/409B[6B2026-10-19 14:11:15.246Z: [6A[2K5b6175bd7c44: Extracting     409B/409B[6B2026-10-19 14:11:15.266Z: [1A[2K2026-10-19 14:11:15.266Z: 8da26f23d120: Downloading  62.16MB/218.3MB[1B2026-10-19 14:11:15.273Z: [2A[2Kfcb2d9375697: 2026-10-19 14:11:15.273Z: Verifying Checksum [2B[2A[2Kfcb2d9375697: Download complete [2B2026-10-19 14:11:15.367Z: [1A[2K8da26f23d120: Downloading  84.87MB/218.3MB[1B2026-10-19 14:11:15.471Z: [1A[2K8da26f23d120: 2026-10-19 14:11:15.471Z: Downloading  107.6MB/218.3MB[1B2026-10-19 14:11:15.572Z: [1A[2K8da26f23d120: Downloading  124.9MB/218.3MB[1B2026-10-19 14:11:15.675Z: [1A[2K8da26f23d120: Downloading  146.5MB/218.3MB[1B2026-10-19 14:11:15.777Z: [1A[2K8da26f23d120: 2026-10-19 14:11:15.778Z: Downloading  167.6MB/218.3MB[1B2026-10-19 14:11:15.879Z: [1A[2K8da26f23d120: Downloading  189.2MB/218.3MB[1B2026-10-19 14:11:15.983Z: [1A[2K2026-10-19 14:11:15.983Z: 8da26f23d120: Downloading  209.8MB/218.3MB[1B2026-10-19 14:11:16.024Z: [1A[2K8da26f23d120: Verifying Checksum 2026-10-19 14:11:16.025Z: [1B[1A[2K8da26f23d120: Download complete [1B2026-10-19 14:11:17.999Z: [6A[2K5b6175bd7c44: Pull complete [6B2026-10-19 14:11:18.004Z: [5A[2K07d77b9465d1: Extracting     135B/135B[5B2026-10-19 14:11:18.005Z: [5A[2K07d77b9465d1: 2026-10-19 14:11:18.005Z: Extracting     135B/135B[5B2026-10-19 14:11:19.580Z: [5A[2K07d77b9465d1: Pull complete [5B2026-10-19 14:11:19.585Z: [4A[2K09bd642602a2: 2026-10-19 14:11:19.585Z: Extracting     223B/223B[4B2026-10-19 14:11:19.586Z: [4A[2K09bd642602a2: Extracting     223B/223B[4B2026-10-19 14:11:19.608Z: [4A[2K09bd642602a2: Pull complete [4B2026-10-19 14:11:19.612Z: [3A[2K2026-10-19 14:11:19.612Z: 4abf96649ed6: Extracting     237B/237B[3B2026-10-19 14:11:19.613Z: [3A[2K4abf96649ed6: Extracting     237B/237B[3B2026-10-19 14:11:19.636Z: [3A[2K4abf96649ed6: Pull complete [3B2026-10-19 14:11:19.653Z: [2A[2Kfcb2d9375697: 2026-10-19 14:11:19.653Z: Extracting  557.1kB/61.55MB[2B2026-10-19 14:11:19.762Z: [2A2026-10-19 14:11:19.763Z: [2Kfcb2d9375697: Extracting  2.785MB/61.55MB[2B2026-10-19 14:11:19.933Z: [2A[2Kfcb2d9375697: 2026-10-19 14:11:19.933Z: Extracting  6.685MB/61.55MB[2B2026-10-19 14:11:20.071Z: [2A[2K2026-10-19 14:11:20.071Z: fcb2d9375697: Extracting  7.242MB/61.55MB[2B2026-10-19 14:11:20.171Z: [2A[2Kfcb2d9375697: Extracting   11.7MB/61.55MB[2B2026-10-19 14:11:20.432Z: [2A[2Kfcb2d9375697: Extracting  14.48MB/61.55MB[2B2026-10-19 14:11:20.541Z: [2A[2Kfcb2d9375697: 2026-10-19 14:11:20.542Z: Extracting  17.27MB/61.55MB[2B2026-10-19 14:11:20.643Z: [2A[2Kfcb2d9375697: Extracting   23.4MB/61.55MB[2B2026-10-19 14:11:20.751Z: [2A[2Kfcb2d9375697: Extracting  29.52MB/61.55MB[2B2026-10-19 14:11:20.854Z: [2A[2Kfcb2d9375697: Extracting  37.88MB/61.55MB[2B2026-10-19 14:11:20.967Z: [2A[2Kfcb2d9375697: 2026-10-19 14:11:20.967Z: Extracting  42.89MB/61.55MB[2B2026-10-19 14:11:21.267Z: [2A[2K2026-10-19 14:11:21.267Z: fcb2d9375697: Extracting  46.24MB/61.55MB[2B2026-10-19 14:11:21.415Z: [2A[2Kfcb2d9375697: Extracting  47.35MB/61.55MB[2B2026-10-19 14:11:21.585Z: [2A[2Kfcb2d9375697: Extracting  47.91MB/61.55MB[2B2026-10-19 14:11:21.731Z: [2A[2Kfcb2d9375697: 2026-10-19 14:11:21.732Z: Extracting  48.46MB/61.55MB[2B2026-10-19 14:11:21.861Z: [2A[2Kfcb2d9375697: Extracting  49.58MB/61.55MB[2B2026-10-19 14:11:21.968Z: [2A[2Kfcb2d9375697: Extracting  51.81MB/61.55MB[2B2026-10-19 14:11:22.163Z: [2A[2Kfcb2d9375697: Extracting  53.48MB/61.55MB[2B2026-10-19 14:11:22.265Z: [2A2026-10-19 14:11:22.266Z: [2Kfcb2d9375697: Extracting  56.26MB/61.55MB[2B2026-10-19 14:11:22.385Z: [2A[2K2026-10-19 14:11:22.385Z: fcb2d9375697: Extracting  57.38MB/61.55MB[2B2026-10-19 14:11:22.557Z: [2A[2Kfcb2d9375697: Extracting  57.93MB/61.55MB[2B2026-10-19 14:11:22.760Z: [2A[2Kfcb2d9375697: Extracting  59.05MB/61.55MB[2B2026-10-19 14:11:22.769Z: [2A[2Kfcb2d9375697: Extracting  61.55MB/61.55MB[2B2026-10-19 14:11:25.073Z: [2A[2Kfcb2d9375697: Pull complete [2B2026-10-19 14:11:25.094Z: [1A[2K8da26f23d120: Extracting  557.1kB/218.3MB[1B2026-10-19 14:11:25.197Z: [1A2026-10-19 14:11:25.198Z: [2K8da26f23d120: Extracting   9.47MB/218.3MB[1B2026-10-19 14:11:25.301Z: [1A[2K8da26f23d120: Extracting  18.94MB/218.3MB[1B2026-10-19 14:11:25.460Z: [1A[2K8da26f23d120: 2026-10-19 14:11:25.460Z: Extracting  25.62MB/218.3MB[1B2026-10-19 14:11:25.606Z: [1A[2K8da26f23d120: Extracting  26.74MB/218.3MB[1B2026-10-19 14:11:25.728Z: [1A[2K8da26f23d120: Extracting  27.85MB/218.3MB[1B2026-10-19 14:11:25.910Z: [1A[2K8da26f23d120: Extracting  28.97MB/218.3MB[1B2026-10-19 14:11:26.075Z: [1A2026-10-19 14:11:26.075Z: [2K8da26f23d120: Extracting  30.08MB/218.3MB[1B2026-10-19 14:11:26.182Z: [1A[2K2026-10-19 14:11:26.183Z: 8da26f23d120: Extracting  33.42MB/218.3MB[1B2026-10-19 14:11:26.285Z: [1A[2K8da26f23d120: Extracting  34.54MB/218.3MB[1B2026-10-19 14:11:26.393Z: [1A[2K8da26f23d120: Extracting  42.89MB/218.3MB[1B2026-10-19 14:11:26.493Z: [1A[2K8da26f23d120: 2026-10-19 14:11:26.493Z: Extracting  50.69MB/218.3MB[1B2026-10-19 14:11:26.604Z: [1A[2K2026-10-19 14:11:26.604Z: 8da26f23d120: Extracting  57.38MB/218.3MB[1B2026-10-19 14:11:26.705Z: [1A[2K8da26f23d120: Extracting  61.28MB/218.3MB[1B2026-10-19 14:11:26.808Z: [1A[2K8da26f23d120: 2026-10-19 14:11:26.808Z: Extracting  65.18MB/218.3MB[1B2026-10-19 14:11:26.910Z: [1A[2K8da26f23d120: Extracting  72.42MB/218.3MB[1B2026-10-19 14:11:27.035Z: [1A[2K8da26f23d120: Extracting     83MB/218.3MB[1B2026-10-19 14:11:27.146Z: [1A[2K2026-10-19 14:11:27.146Z: 8da26f23d120: Extracting  85.79MB/218.3MB[1B2026-10-19 14:11:27.248Z: [1A[2K8da26f23d120: 2026-10-19 14:11:27.249Z: Extracting  88.57MB/218.3MB[1B2026-10-19 14:11:27.352Z: [1A[2K8da26f23d120: Extracting  90.24MB/218.3MB[1B2026-10-19 14:11:27.466Z: [1A[2K2026-10-19 14:11:27.466Z: 8da26f23d120: Extracting  91.91MB/218.3MB[1B2026-10-19 14:11:27.569Z: [1A[2K2026-10-19 14:11:27.569Z: 8da26f23d120: Extracting  101.4MB/218.3MB[1B2026-10-19 14:11:27.670Z: [1A[2K2026-10-19 14:11:27.670Z: 8da26f23d120: Extracting  109.7MB/218.3MB[1B2026-10-19 14:11:27.770Z: [1A[2K8da26f23d120: Extracting  119.2MB/218.3MB[1B2026-10-19 14:11:27.873Z: [1A[2K2026-10-19 14:11:27.873Z: 8da26f23d120: Extracting  127.6MB/218.3MB[1B2026-10-19 14:11:27.977Z: [1A[2K8da26f23d120: Extracting  137.6MB/218.3MB[1B2026-10-19 14:11:28.084Z: [1A[2K8da26f23d120: 2026-10-19 14:11:28.084Z: Extracting  146.5MB/218.3MB[1B2026-10-19 14:11:28.185Z: [1A2026-10-19 14:11:28.185Z: [2K8da26f23d120: Extracting    156MB/218.3MB[1B2026-10-19 14:11:28.290Z: [1A[2K8da26f23d120: Extracting  165.4MB/218.3MB[1B2026-10-19 14:11:28.395Z: [1A[2K8da26f23d120: Extracting  173.8MB/218.3MB[1B2026-10-19 14:11:28.496Z: [1A2026-10-19 14:11:28.496Z: [2K8da26f23d120: Extracting  179.9MB/218.3MB[1B2026-10-19 14:11:28.597Z: [1A[2K8da26f23d120: Extracting  187.2MB/218.3MB[1B2026-10-19 14:11:28.709Z: [1A[2K8da26f23d120: Extracting  197.2MB/218.3MB[1B2026-10-19 14:11:28.812Z: [1A[2K8da26f23d120: Extracting  206.7MB/218.3MB[1B2026-10-19 14:11:28.976Z: [1A[2K8da26f23d120: 2026-10-19 14:11:28.976Z: Extracting    210MB/218.3MB[1B2026-10-19 14:11:29.086Z: [1A[2K8da26f23d120: Extracting  211.7MB/218.3MB[1B2026-10-19 14:11:29.206Z: [1A[2K2026-10-19 14:11:29.206Z: 8da26f23d120: Extracting  213.4MB/218.3MB[1B2026-10-19 14:11:29.383Z: [1A[2K8da26f23d120: Extracting  214.5MB/218.3MB[1B2026-10-19 14:11:29.690Z: [1A[2K2026-10-19 14:11:29.690Z: 8da26f23d120: Extracting  216.1MB/218.3MB[1B2026-10-19 14:11:29.804Z: [1A[2K8da26f23d120: Extracting  217.3MB/218.3MB[1B2026-10-19 14:11:30.102Z: [1A[2K8da26f23d120: Extracting  218.3MB/218.3MB[1B2026-10-19 14:11:38.186Z: [1A[2K8da26f23d120: Pull complete [1B2026-10-19 14:11:38.195Z: Digest: sha256:190bccaf23c9e88f21734f82b08b597310efcd4aa9240faf7e96d98c228753e3
+2026-10-19 14:11:38.199Z: Status: Downloaded newer image for mcr.microsoft.com/devcontainers/base:alpine
+2026-10-19 14:11:38.322Z: Container started2026-10-19 14:11:38.322Z: 
+2026-10-19 14:11:38.504Z: Outcome: success User: vscode WorkspaceFolder: /workspaces/basketlens
+2026-10-19 14:11:38.512Z: devcontainer process exited with exit code 0
+
+=================================================================================
+2026-10-19 14:11:38.851Z: Running blocking commands...
+2026-10-19 14:11:38.879Z: $ devcontainer up --id-label Type=codespaces --workspace-folder /var/lib/docker/codespacemount/workspace/basketlens --mount type=bind,source=/.codespaces/agent/mount/cache,target=/vscode --user-data-folder /var/lib/docker/codespacemount/.persistedshare --container-data-folder .vscode-remote/data/Machine --container-system-data-folder /var/vscode-remote --log-level trace --log-format json --update-remote-user-uid-default never --mount-workspace-git-root false --omit-config-remote-env-from-metadata --skip-non-blocking-commands --expect-existing-container --config "/var/lib/docker/codespacemount/workspace/basketlens/.devcontainer/devcontainer.json" --override-config /root/.codespaces/shared/merged_devcontainer.json --default-user-env-probe loginInteractiveShell --container-session-data-folder /workspaces/.codespaces/.persistedshare/devcontainers-cli/cache --secrets-file /root/.codespaces/shared/user-secrets-envs.json
+2026-10-19 14:11:39.056Z: @devcontainers/cli 0.83.3. Node.js v18.20.8. linux 6.8.0-1064-azure x64.
+2026-10-19 14:11:39.403Z: Outcome: success User: vscode WorkspaceFolder: /workspaces/basketlens
+2026-10-19 14:11:39.411Z: devcontainer process exited with exit code 0
+
+=================================================================================
+2026-10-19 14:11:39.419Z: Configuring codespace...
+
+=================================================================================
+2026-10-19 14:11:39.420Z: Finished configuring codespace.
