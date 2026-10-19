@@ -18,5 +18,5 @@
 
 ## 4. Verificação Automatizada da Infraestrutura e Schemas
 
-- [ ] 4.1 Criar `tests/test_connections_and_schemas.py` validando conexões aos 3 containers, existência dos 3 índices no MongoDB, existência das 4 tabelas CQL no keyspace `basketlens` do Cassandra e geração/operação de chaves no Redis
+- [x] 4.1 Criar `tests/test_connections_and_schemas.py` validando conexões aos 3 containers, existência dos 3 índices no MongoDB, existência das 4 tabelas CQL no keyspace `basketlens` do Cassandra e geração/operação de chaves no Redis
 - [ ] 4.2 Executar `pytest tests/test_connections_and_schemas.py` contra a stack Docker Compose ativa
