@@ -24,49 +24,7 @@ O **BasketLens** implementa uma arquitetura de **Persistência Poliglota** para 
 4. **Serviço & Inteligência Poliglota (`basketlens.queries`):** Orquestra a Visão 360º (`build_360_view(household_key)`) e as consultas analíticas das Perguntas de Negócio 1, 2, 3 e Bônus de Trade Marketing com *pushdown* total aos bancos.
 5. **Matriz Comparativa de Modelagem NoSQL:** Fundamenta a distribuição de carga segundo o Teorema CAP, volume de escrita, tempo de resposta esperado e estratégia de indexação de cada motor.
 
-### 1.1 Diagrama Mermaid da Arquitetura Integrada
-
-```mermaid
-flowchart TB
-    subgraph Raw["Dataset Oficial dunnhumby (8 CSVs · 847 MB · 6,27M linhas)"]
-        CSV_TX["transaction_data.csv\n(2,59M linhas · 141,7 MB)"]
-        CSV_CAUSAL["causal_data.csv\n(3,68M linhas · 695,9 MB)"]
-        CSV_DEMO["hh_demographic.csv (801)\nproduct.csv (92,3k)\ncampaign_desc/table · coupon/redempt"]
-    end
-
-    subgraph Engine["Motor Polars Out-of-Core (Zero Full-Dataset In-Memory)"]
-        ING["Modo A: Full Historical Load\n(basketlens.ingestion · cutoff_day=711)"]
-        REP["Modo B: Daily Event Replay\n(basketlens.replay · DAY 650..657)"]
-    end
-
-    subgraph NoSQL["Camada de Persistência Poliglota (Docker Compose Local)"]
-        MONGO[("MongoDB 8.0.4\nhouseholds (2.500 docs)\nUI: localhost:8081")]
-        CASS[("Apache Cassandra 5.0.2\n4 CQL Tables (Keyspace basketlens)\nUI: localhost:3000")]
-        REDIS[("Redis 7.4.2-alpine\nActive Campaigns/Coupons (TTL)\n& Cache-Aside profile:{id}\nUI: localhost:8082")]
-    end
-
-    subgraph Queries["Biblioteca de Consulta Poliglota (basketlens.queries)"]
-        V360["build_360_view(household_key)"]
-        BQ["Perguntas de Negócio 1, 2, 3\n+ Bônus Trade Marketing"]
-    end
-
-    Raw --> ING
-    Raw --> REP
-    ING --> MONGO
-    ING --> CASS
-    ING --> REDIS
-    REP -->|"UpdateOne ($inc + $push $slice:-5)"| MONGO
-    REP -->|"INSERT CQL (UNLOGGED BATCH)"| CASS
-    REP -->|"Rotate TTL + DEL profile:{id}"| REDIS
-    REDIS <-->|"1. GET/SETEX profile:{id}\n3. SMEMBERS + TTL > 0"| V360
-    MONGO -->|"1b. Fallback em Cache Miss"| V360
-    CASS -->|"2. Partition Query (LIMIT N)"| V360
-    MONGO --> BQ
-    CASS --> BQ
-    REDIS --> BQ
-```
-
-### 1.2 Racional de Escolha por Família NoSQL
+### 1.1 Racional de Escolha por Família NoSQL
 
 | Banco | Família NoSQL | Papel Arquitetural no BasketLens | Fonte da Verdade (*System of Record*)? | Justificativa Técnica |
 |:---|:---|:---|:---|:---|
