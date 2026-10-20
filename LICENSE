@@ -1,21 +1,34 @@
-MIT License
+TERMOS DE USO E LICENÇA DE USO NÃO-COMERCIAL (DIDÁTICO E CIENTÍFICO)
+BASKETLENS 360º — PERSISTÊNCIA POLIGLOTA PARA VAREJO FÍSICO
 
-Copyright (c) 2026 Daniel M
+Copyright (c) 2026 BasketLens Team. Todos os direitos reservados.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. FINALIDADE E ESCOPO DE USO
+Este repositório, seu código-fonte, scripts de automação, esquemas de banco de dados,
+cadernos interativos (Jupyter Notebooks) e documentos de arquitetura foram desenvolvidos
+exclusivamente para fins educacionais, didáticos, acadêmicos e científicos no âmbito
+da disciplina Big Data e NoSQL: Soluções de Armazenamento Inovadoras (BDDB).
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+2. RESTRIÇÃO COMERCIAL EXPRESSA
+É EXPRESSAMENTE PROIBIDA qualquer utilização, reprodução, redistribuição, licenciamento,
+sublicenciamento, monetização, exploração comercial direta ou indireta, bem como a
+incorporação deste código ou de seus artefatos em produtos, serviços ou plataformas comerciais,
+no todo ou em parte, sem autorização prévia e expressa por escrito dos autores.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+3. FONTE DOS DADOS E ATRIBUIÇÃO OFICIAL (DUNNHUMBY)
+Este projeto utiliza o dataset público "The Complete Journey", disponibilizado gratuitamente
+pela dunnhumby para fins estritamente acadêmicos, de pesquisa e educacionais mediante aceite
+dos termos de uso oficiais.
+
+- Fonte Oficial: dunnhumby Source Files — The Complete Journey (https://www.dunnhumby.com/source-files/)
+- Espelho de Distribuição Pública: Kaggle (https://www.kaggle.com/datasets/frtgnn/dunnhumby-the-complete-journey)
+- Citação Obrigatória:
+  dunnhumby (2023). "The Complete Journey: Retail Shopping Dataset & User Guide".
+  Disponível em: https://www.dunnhumby.com/source-files/.
+  Utilizado exclusivamente para fins acadêmicos na disciplina Big Data e NoSQL.
+
+4. ISENÇÃO DE RESPONSABILIDADE
+ESTE SOFTWARE É FORNECIDO "NO ESTADO EM QUE SE ENCONTRA" (AS IS), SEM QUALQUER GARANTIA
+EXPLÍCITA OU IMPLÍCITA, INCLUINDO, MAS NÃO SE LIMITANDO A, GARANTIAS DE COMERCIABILIDADE
+OU ADEQUAÇÃO A UMA FINALIDADE ESPECÍFICA. EM NENHUMA HIPÓTESE OS AUTORES SERÃO RESPONSÁVEIS
+POR QUAISQUER DANOS DIRETOS, INDIRETOS, INCIDENTAIS OU CONSEQUENTES DECORRENTES DO USO DESTE PROJETO.

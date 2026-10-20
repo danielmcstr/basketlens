@@ -65,40 +65,70 @@ def test_business_answers_doc_contains_empirical_evidence_for_all_questions() ->
 
 
 def test_readme_documents_setup_web_uis_notebooks_and_citation() -> None:
-    """Verify `README.md` documents context, 8 CSVs, links to docs, ASCII function diagrams, Web UIs, and citation."""
+    """Verify `README.md` documents high-level context, bridges to docs, setup, Web UIs, notebooks, and CONTRIBUTING."""
     readme_path = PROJECT_ROOT / "README.md"
     assert readme_path.is_file(), "Missing README.md"
     content = readme_path.read_text(encoding="utf-8")
 
     for expected in (
-        "docs/assets/arch-polyglot-overview.svg",
         "docs/ARCHITECTURE.md",
         "docs/BUSINESS_ANSWERS.md",
-        "causal_data.csv",
-        "transaction_data.csv",
-        "hh_demographic.csv",
-        "check_all_connections()",
-        "initialize_all_schemas()",
-        "run_full_ingestion(",
-        "prepare_replay_baseline(",
-        "replay_day(",
-        "build_360_view(",
-        "get_active_campaigns_for_household(",
-        "get_avg_weekly_spend_by_demographic(",
-        "get_product_causal_promotion_lift(",
+        "CONTRIBUTING.md",
+        "LICENSE",
         "docker compose up -d",
         "http://localhost:8081",
         "http://localhost:3000",
         "http://localhost:8082",
+        "check_all_connections()",
+        "initialize_all_schemas()",
+        "run_full_ingestion()",
+        "prepare_replay_baseline()",
+        "replay_day(654)",
+        "build_360_view()",
+        "get_household_profile_and_recent_history()",
+        "get_active_campaigns_for_household()",
+        "get_avg_weekly_spend_by_demographic()",
+        "get_product_causal_promotion_lift()",
         "01_eda_and_data_quality.ipynb",
         "02_full_ingestion_setup.ipynb",
         "03_event_replay_streaming.ipynb",
         "04_polyglot_360_analytics.ipynb",
-        "pytest",
         "dunnhumby",
-        "https://www.dunnhumby.com/source-files/",
     ):
         assert expected in content, f"Missing '{expected}' in README.md"
+
+
+def test_governance_and_license_files_exist_and_match_spec() -> None:
+    """Verify `CONTRIBUTING.md` and `LICENSE` exist, and `pyproject.toml` declares non-commercial educational license."""
+    contrib_path = PROJECT_ROOT / "CONTRIBUTING.md"
+    assert contrib_path.is_file(), "Missing CONTRIBUTING.md"
+    contrib_content = contrib_path.read_text(encoding="utf-8")
+    for token in (
+        ".venv/bin/pytest -v",
+        "src/basketlens/",
+        "Zero Full-Dataset In-Memory",
+        "ALLOW FILTERING",
+        "EXPRESS_IXSCAN",
+        "TTL",
+    ):
+        assert token in contrib_content, f"Missing '{token}' in CONTRIBUTING.md"
+
+    license_path = PROJECT_ROOT / "LICENSE"
+    assert license_path.is_file(), "Missing LICENSE"
+    license_content = license_path.read_text(encoding="utf-8")
+    for token in (
+        "TERMOS DE USO E LICENÇA DE USO NÃO-COMERCIAL",
+        "https://www.dunnhumby.com/source-files/",
+        "EXPRESSAMENTE PROIBIDA",
+    ):
+        assert token in license_content, f"Missing '{token}' in LICENSE"
+
+    pyproject_content = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert "Academic and Educational Use Only (Non-Commercial)" in pyproject_content
+    assert '"MIT"' not in pyproject_content
+
+    arch_content = (PROJECT_ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+    assert "```mermaid" not in arch_content, "Redundant mermaid block should be removed from docs/ARCHITECTURE.md"
 
 
 def test_standardized_drawio_architecture_svgs_exist_and_are_valid() -> None:

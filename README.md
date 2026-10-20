@@ -14,21 +14,6 @@ No varejo alimentar físico moderno, programas de fidelidade geram simultaneamen
 
 O **BasketLens 360º** resolve esse trilema por meio de uma arquitetura de **Persistência Poliglota**, onde cada família NoSQL assume exatamente a carga de trabalho para a qual foi projetada:
 
-```text
-┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                 RESPONSABILIDADES DE ARMAZENAMENTO DA PERSISTÊNCIA POLIGLOTA                    │
-├───────────────────────────────┬───────────────────────────────┬─────────────────────────────────┤
-│    MongoDB 8.0 (CP · Docs)    │Apache Cassandra 5.0 (AP · Col)│      Redis 7.4 (AP · RAM)       │
-├───────────────────────────────┼───────────────────────────────┼─────────────────────────────────┤
-│ • Coleção `households` (2.500)│ • Keyspace `basketlens`       │ • Hashes `campanha:{id}` (TTL)  │
-│ • 801 c/ demografia (Polimorf)│ • `transactions_by_household` │ • Hashes `cupom:{upc}` (TTL)    │
-│ • 1.699 sem demografia        │ • `transactions_by_household_ │ • Sets `household:{id}:coupons` │
-│ • `recent_baskets` ($slice:-5)│    product` (histórico SKU)   │ • String `profile:{id}`         │
-│ • `behavior_summary` (RFM $inc│ • `sales_by_product_week`     │   (Cache-Aside SETEX 60s / DEL) │
-│ • 3 índices B-Tree (0 ms)     │ • `causal_promotions_by_store`│ • ZSet `ranking:week:{w}`       │
-└───────────────────────────────┴───────────────────────────────┴─────────────────────────────────┘
-```
-
 1. **Agregado do Perfil 360º (`MongoDB 8.0` · Documentos BSON · `CP`):** armazena os **2.500 domicílios** da base em documentos coesos (`households`), combinando **Esquema Polimórfico** (acomodando naturalmente os **801 domicílios** com demografia mapeada e os **1.699** sem demografia, sem colunas `NULL`), **Subset Pattern** (mantendo apenas as 5 cestas mais recentes em `recent_baskets` via `$slice: -5`), **Extended Reference Pattern** (itens enriquecidos com departamento e categoria) e **Computed Pattern** (`behavior_summary` atualizado incrementalmente via `$inc`).
 2. **Séries Temporais de Transações e Promoções Físicas (`Apache Cassandra 5.0` · Colunas Largas · `AP`):** absorve os eventos *append-only* de compras (`2,59 milhões` de linhas) e de exposição em display/tabloide (`36,78 milhões` de linhas) em **4 tabelas CQL modeladas pela consulta (*Query-Driven Modeling*)**, com ordenação física decrescente em disco (`CLUSTERING ORDER BY ... DESC`) e **zero uso de `ALLOW FILTERING`**.
 3. **Camada de Velocidade, Elegibilidade e Cache (`Redis 7.4` · Chave-Valor em RAM · `AP`):** governa em sub-milissegundo quais campanhas e cupons estão ativos **agora** através de **TTL nativo** proporcional à janela de vigência (`campanha:{id}`, `cupom:{upc}`, `household:{id}:campaigns`, `household:{id}:coupons`), além de acelerar a leitura do perfil 360º via padrão **Cache-Aside** (`profile:{id}`) com invalidação ativa (`DEL`) a cada nova compra.
@@ -39,17 +24,32 @@ O **BasketLens 360º** resolve esse trilema por meio de uma arquitetura de **Per
 
 ---
 
+## 2. Trilha da Documentação: Arquitetura e Respostas de Negócio
+
+Para navegar pelo projeto com todo o contexto conceitual, técnico e empírico, a documentação oficial está organizada em dois documentos centrais:
+
+1. [**`docs/ARCHITECTURE.md`**](docs/ARCHITECTURE.md) — **Arquitetura Poliglota, Modelagem NoSQL e Análise Crítica:**
+   - Fundamenta as decisões de engenharia através dos **diagramas em Draw.io SVG** (`arch-polyglot-overview.svg`, `arch-operational-modes.svg`, `arch-neo4j-graph.svg` e `arch-kubernetes-production.svg`).
+   - Apresenta as **3 nuances físicas da base *The Complete Journey*** (assimetria de volume com Polars *out-of-core*, cobertura demográfica parcial de 801/2.500 famílias com códigos alfanuméricos e decomposição de preços/descontos no PDV).
+   - Detalha a matriz **CAP/Consistência**, a modelagem física em cada motor (**MongoDB**, **Cassandra** e **Redis**), o ciclo **Cache-Aside** e a análise crítica (**Neo4j** como sidecar analítico e evolução corporativa em **Kubernetes**).
+2. [**`docs/BUSINESS_ANSWERS.md`**](docs/BUSINESS_ANSWERS.md) — **Respostas Executivas e Evidências Empíricas:**
+   - Apresenta as respostas completas e planos de execução reais para as **3 perguntas obrigatórias do professor** + **consultas bônus de Trade Marketing**:
+     - **Pergunta 1:** Perfil 360º de John Smith (`#208`), plano `EXPRESS_IXSCAN` (0 ms) e benchmark de Cache-Aside (~6.8x mais rápido).
+     - **Pergunta 2:** Elegibilidade em tempo real com TTL dinâmico no Dia 650 e auditoria dia a dia do Event Replay (`DAY 650..657`).
+     - **Pergunta 3:** Gasto semanal médio das 801 famílias demográficas agrupadas por faixa etária (`classification_1`) e nível de renda (`classification_3`).
+     - **Bônus:** Lift promocional de gôndola/tabloide (+347,56% no SKU 862349 e replicação da Semana 40 do SKU 72717).
+
 ### Resumo de Mapeamento da Rubrica Avaliativa
 
 | Documento / Artefato | Conteúdo Principal | Critério da Rubrica Atendido |
 |:---|:---|:---|
-| [**`docs/ARCHITECTURE.md`**](docs/ARCHITECTURE.md) | 4 diagramas Draw.io SVG padronizados (Arquitetura Poliglota + Observabilidade, Modos A/B + Cache-Aside, Grafo Neo4j e Produção Kubernetes), justificativas de modelagem (MongoDB, Cassandra e Redis), matriz **CAP/Consistência** e **Análise Crítica**. | Arquitetura e Modelagem Justificadas (12 pts) + Análise Crítica (8 pts) |
+| [**`docs/ARCHITECTURE.md`**](docs/ARCHITECTURE.md) | Diagramas Draw.io SVG padronizados, nuances físicas do dataset, justificativas de modelagem (MongoDB, Cassandra e Redis), matriz **CAP/Consistência** e **Análise Crítica** (Neo4j + Kubernetes). | Arquitetura e Modelagem Justificadas (12 pts) + Análise Crítica (8 pts) |
 | [**`docs/BUSINESS_ANSWERS.md`**](docs/BUSINESS_ANSWERS.md) | Respostas executivas e técnicas comentadas para as **3 perguntas obrigatórias de negócio** + **consultas bônus de Trade Marketing**, com planos `explain("executionStats")`, tabelas consolidadas das 801 famílias demográficas e benchmark de Cache-Aside. | Implementação Funcional com Dados Reais e Consultas (15 pts) + Apresentação (10 pts) |
 | [**`docs/dunnhumby_The-Complete-Journey-User-Guide.pdf`**](docs/dunnhumby_The-Complete-Journey-User-Guide.pdf) | Guia oficial de referência da dunnhumby (dicionário das 8 tabelas, estudo de caso **John Smith `household_key = 208`** e fórmulas de preço/desconto). | Dicionário Oficial de Dados |
 
 ---
 
-## 4. Arquitetura e Infraestrutura Local (`docker-compose.yml`)
+## 3. Infraestrutura Local (`docker-compose.yml`)
 
 Toda a infraestrutura roda 100% localmente via Docker Compose com versões fixadas (*pinned versions*), *healthchecks* nativos e **3 interfaces Web pré-configuradas (Zero Config / Sem Login)**:
 
@@ -61,9 +61,9 @@ Toda a infraestrutura roda 100% localmente via Docker Compose com versões fixad
 
 ---
 
-## 5. Como Executar o Projeto Passo a Passo
+## 4. Como Executar o Projeto Passo a Passo
 
-### 5.1 Criar o Ambiente Virtual Python (`.venv`) e Instalar as Dependências
+### 4.1 Criar o Ambiente Virtual Python (`.venv`) e Instalar as Dependências
 Na raiz do repositório, crie o ambiente virtual isolado `.venv`, ative-o e instale o pacote `basketlens` em modo editável junto com todas as dependências de execução e desenvolvimento (`polars`, `pymongo`, `cassandra-driver`, `redis`, `jupyterlab`, `pytest`, etc.):
 
 ```bash
@@ -82,7 +82,7 @@ pip install -e ".[dev]"
 python -m ipykernel install --user --name basketlens --display-name "Python (.venv BasketLens)"
 ```
 
-### 5.2 Subir a Infraestrutura Docker Compose
+### 4.2 Subir a Infraestrutura Docker Compose
 ```bash
 cp .env.example .env
 docker compose up -d
@@ -90,38 +90,21 @@ docker compose ps
 ```
 > O Cassandra leva cerca de 35–50 segundos para concluir o *bootstrap* inicial até atingir `healthy`. As Web UIs sobem automaticamente em `http://localhost:8081` (Mongo Express), `http://localhost:3000` (Cassandra Web) e `http://localhost:8082` (Redis Commander).
 
-### 5.3 Verificar Conexões e Inicializar Schemas/Índices
+### 4.3 Verificar Conexões e Inicializar Schemas/Índices
 ```bash
 .venv/bin/python -c "from basketlens import check_all_connections, initialize_all_schemas; print(check_all_connections()); print(initialize_all_schemas())"
 ```
+
 ---
 
+## 5. Roteiro dos 4 Notebooks Demonstrativos (`notebooks/`)
 
-## 8. Roteiro dos 4 Notebooks Demonstrativos (`notebooks/`)
-
-Todos os 4 notebooks estão pré-executados e prontos para inspeção ou reexecução ao vivo:
+Todos os 4 notebooks estão pré-executados e prontos para inspeção ou reexecução ao vivo durante a apresentação:
 
 1. [**`notebooks/01_eda_and_data_quality.ipynb`**](notebooks/01_eda_and_data_quality.ipynb) — **EDA Out-of-Core e Qualidade de Dados com Polars**: inventário dos 8 CSVs (39,6M linhas totais / 808 MiB), prova de que apenas 801 de 2.500 domicílios possuem `hh_demographic.csv`, inspeção dos códigos alfanuméricos de `causal_data.csv` e rastreamento do caso de estudo `household_key = 208`.
-2. [**`notebooks/02_full_ingestion_setup.ipynb`**](notebooks/02_full_ingestion_setup.ipynb) — **Modo A (Ingestão Poliglota Completa até `DAY = 711`)**: executa `check_all_connections()`, `initialize_all_schemas()`, `run_full_ingestion()` e `explain_query()`, comprovando a carga dos 2.500 documentos no MongoDB, 4 tabelas CQL no Cassandra, estado ativo no Redis e planos `EXPRESS_IXSCAN` / `IXSCAN`.
-3. [**`notebooks/03_event_replay_streaming.ipynb`**](notebooks/03_event_replay_streaming.ipynb) — **Modo B (Event Replay Dia a Dia: `DAY = 649 .. 657`)**: executa `prepare_replay_baseline()`, `replay_range()`, `replay_day(654)`, `build_360_view(208)`, `get_household_product_history(208, 1017772)` e `restore_full_historical_state()`, demonstrando o resgate do cupom `51800000050`, a rotação `$slice: -5`, a invalidação `DEL profile:208` e a expiração automática da Campanha 22 no Dia 657.
-4. [**`notebooks/04_polyglot_360_analytics.ipynb`**](notebooks/04_polyglot_360_analytics.ipynb) — **Visão 360º e Respostas Executivas às 3 Perguntas + Bônus Trade Marketing**: executa `build_360_view()`, `benchmark_cache_aside_latency()`, `get_household_profile_and_recent_history()`, `get_active_campaigns_for_household()`, `get_avg_weekly_spend_by_demographic()` (`classification_1` e `classification_3`), `get_product_causal_promotion_lift()` e `get_store_weekly_showcase()`.
+2. [**`notebooks/02_full_ingestion_setup.ipynb`**](notebooks/02_full_ingestion_setup.ipynb) — **Modo A (Ingestão Poliglota Completa até `DAY = 711`)**: executa [`check_all_connections()`](src/basketlens/connections.py), [`initialize_all_schemas()`](src/basketlens/schemas/__init__.py), [`run_full_ingestion()`](src/basketlens/ingestion/pipeline.py) e [`explain_query()`](src/basketlens/schemas/mongo_schema.py), comprovando a carga dos 2.500 documentos no MongoDB, 4 tabelas CQL no Cassandra, estado ativo no Redis e planos `EXPRESS_IXSCAN` / `IXSCAN`.
+3. [**`notebooks/03_event_replay_streaming.ipynb`**](notebooks/03_event_replay_streaming.ipynb) — **Modo B (Event Replay Dia a Dia: `DAY = 649 .. 657`)**: executa [`prepare_replay_baseline()`](src/basketlens/replay/engine.py), [`replay_range()`](src/basketlens/replay/engine.py), [`replay_day(654)`](src/basketlens/replay/engine.py), [`build_360_view(208)`](src/basketlens/queries/view_360.py), [`get_household_product_history(208, 1017772)`](src/basketlens/queries/business_questions.py) e [`restore_full_historical_state()`](src/basketlens/replay/engine.py), demonstrando o resgate do cupom `51800000050`, a rotação `$slice: -5`, a invalidação `DEL profile:208` e a expiração automática da Campanha 22 no Dia 657.
+4. [**`notebooks/04_polyglot_360_analytics.ipynb`**](notebooks/04_polyglot_360_analytics.ipynb) — **Visão 360º e Respostas Executivas às 3 Perguntas + Bônus Trade Marketing**: executa [`build_360_view()`](src/basketlens/queries/view_360.py), [`benchmark_cache_aside_latency()`](src/basketlens/queries/view_360.py), [`get_household_profile_and_recent_history()`](src/basketlens/queries/business_questions.py), [`get_active_campaigns_for_household()`](src/basketlens/queries/business_questions.py), [`get_avg_weekly_spend_by_demographic()`](src/basketlens/queries/business_questions.py) e [`get_product_causal_promotion_lift()`](src/basketlens/queries/business_questions.py), acompanhados de gráficos visuais interativos.
 
----
-
-## 9. Testes Automatizados (`pytest`)
-
-Para executar toda a suíte de validação fim a fim (configuração, conexões, schemas/índices, ingestão Polars, Event Replay, consultas 360º e validação dos entregáveis documentais):
-```bash
-.venv/bin/pytest -v
-```
-
----
-
-## 10. Fonte dos Dados e Citação Oficial de Licença
-
-Este projeto utiliza o dataset público **dunnhumby — The Complete Journey**, disponibilizado gratuitamente pela **dunnhumby** para fins acadêmicos, científicos e educacionais mediante aceite dos termos de uso oficiais:
-
-- **Fonte Oficial:** dunnhumby Source Files — *The Complete Journey* (`https://www.dunnhumby.com/source-files/`)
-- **Espelho Público:** Kaggle (`https://www.kaggle.com/datasets/frtgnn/dunnhumby-the-complete-journey`)
-- **Citação Obrigatória:**
-  > *dunnhumby (2023). "The Complete Journey: Retail Shopping Dataset & User Guide". Disponível em: https://www.dunnhumby.com/source-files/. Utilizado exclusivamente para fins acadêmicos na disciplina Big Data e NoSQL.*
+> **Extensão do Projeto e Testes:** Para executar a suíte de testes automatizados (`.venv/bin/pytest -v`), consultar a arquitetura de pacotes de `src/basketlens/` ou conhecer as 4 invariantes técnicas do projeto, consulte o [**`CONTRIBUTING.md`**](CONTRIBUTING.md).
+> **Termos de Uso e Licença:** O código e os dados deste repositório destinam-se exclusivamente para fins didáticos e educacionais (uso comercial não autorizado). Consulte o arquivo [**`LICENSE`**](LICENSE).
