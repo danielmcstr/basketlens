@@ -10,20 +10,19 @@
 ## 1. Visão Geral da Arquitetura Poliglota
 
 <p align="center">
-  <img src="assets/arch-polyglot-overview.svg" alt="BasketLens 360º — Arquitetura Poliglota de Big Data & NoSQL com Camada de Observabilidade" width="100%"/>
+  <img src="assets/arch-polyglot-overview.svg" alt="BasketLens 360º — Arquitetura de Persistência Poliglota para Varejo Físico" width="100%"/>
 </p>
 
-O **BasketLens** implementa uma arquitetura de **Persistência Poliglota** para varejo alimentar físico com programa de fidelidade, combinando três motores NoSQL de famílias distintas (**Documental**, **Colunar Larga** e **Chave-Valor em Memória**) orquestrados por uma camada de ingestão e consulta *out-of-core* em Python + **Polars**. O diagrama acima estrutura o fluxo fim-a-fim em **5 raias arquiteturais** acompanhadas por uma **camada transversal de observabilidade**:
+O **BasketLens** implementa uma arquitetura de **Persistência Poliglota** para varejo alimentar físico com programa de fidelidade, combinando três motores NoSQL de famílias distintas (**Documental**, **Colunar Larga** e **Chave-Valor em Memória**) orquestrados por uma camada de ingestão e consulta *out-of-core* em Python + **Polars**. O diagrama acima estrutura o fluxo fim-a-fim em **4 colunas operacionais** acompanhadas por uma **matriz comparativa de modelagem e padrões de acesso**:
 
 1. **Fontes de Dados (Data Sources):** Os 8 arquivos CSV oficiais do dataset *dunnhumby — The Complete Journey* (~847,05 MB · 6.274.384 linhas · 2.500 domicílios · 711 dias / 102 semanas).
-2. **Ingestão & Processamento Out-of-Core:** Motor Python + **Polars** operando em dois modos complementares — **Modo A** (`basketlens.ingestion` via `scan_csv(streaming=True)` e `read_csv_batched` até `cutoff_day = 711`) e **Modo B** (`basketlens.replay` simulando o avanço diário `DAY 650..657` com `SECONDS_PER_DAY = 5`).
-3. **Armazenamento Poliglota NoSQL (Storage Layer):**
+2. **Ingestão Out-of-Core com Polars:** Motor Python + **Polars** operando em dois modos complementares — **Modo A** (`basketlens.ingestion` via `scan_csv(streaming=True)` e `read_csv_batched` até `cutoff_day = 711`) e **Modo B** (`basketlens.replay` simulando o avanço diário `DAY 650..657` com `SECONDS_PER_DAY = 5`).
+3. **Armazenamento Poliglota NoSQL (3 Bancos Especializados):**
    - **MongoDB 8.0.4 (CP — Documentos BSON, `:27017`):** Coleção `households` (2.500 documentos, sendo 801 com `demographics` e 1.699 sem `demographics`), consolidando `behavior_summary` (RFM), `recent_baskets` (`$slice: -5`) e 3 índices B-Tree (`IXSCAN`).
    - **Apache Cassandra 5.0.2 (AP — Colunas Largas, `:9042`):** Keyspace `basketlens` com 4 tabelas orientadas à consulta (`transactions_by_household`, `transactions_by_household_product`, `sales_by_product_week` e `causal_promotions_by_store_week`).
    - **Redis 7.4.2-alpine (AP — Chave-Valor em RAM, `:6379`):** Hashes e Sets de campanhas/cupons ativos com `TTL` dinâmico, Cache-Aside de perfis (`profile:{id}` com `SETEX`/`DEL`) e vitrines semanais (`ranking:week:{w}`, `store:{id}:week:{w}:displays`).
-4. **Serviço & Inteligência Poliglota (`basketlens.queries`):** Orquestra a Visão 360º (`build_360_view(household_key)`) e as consultas analíticas das Perguntas de Negócio 1, 2, 3 e Bônus de Trade Marketing.
-5. **Consumo & Entregáveis:** Os 4 Jupyter Notebooks executáveis (`01` a `04`), a suíte automatizada E2E (`pytest`) e a documentação executiva.
-6. **Camada Transversal de Observabilidade & Governança Visual:** Inspeção em tempo real via **mongo-express** (`http://localhost:8081`), **cassandra-web** (`http://localhost:3000`), **redis-commander** (`http://localhost:8082`) e telemetria estruturada via **Loguru**.
+4. **Serviço & Inteligência Poliglota (`basketlens.queries`):** Orquestra a Visão 360º (`build_360_view(household_key)`) e as consultas analíticas das Perguntas de Negócio 1, 2, 3 e Bônus de Trade Marketing com *pushdown* total aos bancos.
+5. **Matriz Comparativa de Modelagem NoSQL:** Fundamenta a distribuição de carga segundo o Teorema CAP, volume de escrita, tempo de resposta esperado e estratégia de indexação de cada motor.
 
 ### 1.1 Diagrama Mermaid da Arquitetura Integrada
 

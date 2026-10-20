@@ -34,7 +34,7 @@ O **BasketLens 360º** resolve esse trilema por meio de uma arquitetura de **Per
 3. **Camada de Velocidade, Elegibilidade e Cache (`Redis 7.4` · Chave-Valor em RAM · `AP`):** governa em sub-milissegundo quais campanhas e cupons estão ativos **agora** através de **TTL nativo** proporcional à janela de vigência (`campanha:{id}`, `cupom:{upc}`, `household:{id}:campaigns`, `household:{id}:coupons`), além de acelerar a leitura do perfil 360º via padrão **Cache-Aside** (`profile:{id}`) com invalidação ativa (`DEL`) a cada nova compra.
 
 <p align="center">
-  <img src="docs/assets/arch-polyglot-overview.svg" alt="BasketLens 360º — Arquitetura Poliglota de Big Data & NoSQL com Observabilidade" width="100%"/>
+  <img src="docs/assets/arch-polyglot-overview.svg" alt="BasketLens 360º — Arquitetura de Persistência Poliglota para Varejo Físico" width="100%"/>
 </p>
 
 ### Engenharia *Out-of-Core* com Polars e Estudo de Caso Real (`John Smith #208`)
