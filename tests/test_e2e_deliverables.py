@@ -132,24 +132,32 @@ def test_governance_and_license_files_exist_and_match_spec() -> None:
 
 
 def test_standardized_drawio_architecture_svgs_exist_and_are_valid() -> None:
-    """Verify all 4 Draw.io architecture SVGs exist in `docs/assets/`, contain mxfile metadata, and are referenced."""
+    """Verify all 4 Draw.io architecture diagrams exist as .drawio.svg, contain mxCells, and are referenced."""
     import xml.etree.ElementTree as ET
 
     arch_content = (PROJECT_ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
-    svg_names = (
-        "arch-polyglot-overview.svg",
-        "arch-operational-modes.svg",
-        "arch-neo4j-graph.svg",
-        "arch-kubernetes-production.svg",
+    diagram_stems = (
+        "arch-polyglot-overview",
+        "arch-operational-modes",
+        "arch-neo4j-graph",
+        "arch-kubernetes-production",
     )
-    for svg_name in svg_names:
-        svg_path = PROJECT_ROOT / "docs" / "assets" / svg_name
-        assert svg_path.is_file(), f"Missing architecture SVG: {svg_name}"
-        raw = svg_path.read_text(encoding="utf-8")
-        assert "mxfile" in raw, f"Missing Draw.io mxfile metadata in {svg_name}"
+    for stem in diagram_stems:
+        drawio_svg = PROJECT_ROOT / "docs" / "assets" / f"{stem}.drawio.svg"
+        assert drawio_svg.is_file(), f"Missing Draw.io SVG: {drawio_svg.name}"
+        raw = drawio_svg.read_text(encoding="utf-8")
+        assert "mxfile" in raw, f"Missing Draw.io mxfile metadata in {drawio_svg.name}"
+
         root = ET.fromstring(raw)
-        assert root.tag.endswith("svg"), f"Invalid root tag in {svg_name}"
-        assert f"assets/{svg_name}" in arch_content, f"{svg_name} not embedded in docs/ARCHITECTURE.md"
+        assert root.tag.endswith("svg"), f"Invalid root tag in {drawio_svg.name}"
+        assert f"assets/{stem}.drawio.svg" in arch_content, f"{stem}.drawio.svg not embedded in docs/ARCHITECTURE.md"
+
+        mx_content = root.attrib.get("content", "")
+        mx_root = ET.fromstring(mx_content)
+        vertices = mx_root.findall('.//mxCell[@vertex="1"]')
+        edges = mx_root.findall('.//mxCell[@edge="1"]')
+        assert len(vertices) >= 10, f"Insufficient Draw.io vertices in {stem}.drawio.svg"
+        assert len(edges) >= 5, f"Insufficient Draw.io edges in {stem}.drawio.svg"
 
 
 def test_python_library_docstrings_and_notebooks_contain_ascii_db_diagrams() -> None:

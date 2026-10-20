@@ -12,7 +12,7 @@
 O **BasketLens 360º** implementa uma arquitetura de **Persistência Poliglota** desenvolvida para resolver os desafios de engenharia de dados do varejo alimentar físico com programa de fidelidade. A plataforma orquestra três motores NoSQL especializados (**MongoDB 8.0**, **Apache Cassandra 5.0** e **Redis 7.4**) alimentados por um motor de processamento *out-of-core* em Python + **Polars**:
 
 <p align="center">
-  <img src="assets/arch-polyglot-overview.svg" alt="BasketLens 360º — Arquitetura de Persistência Poliglota para Varejo Físico" width="100%"/>
+  <img src="assets/arch-polyglot-overview.drawio.svg" alt="BasketLens 360º — Arquitetura de Persistência Poliglota para Varejo Físico" width="100%"/>
 </p>
 
 Toda a modelagem física, o particionamento em disco e as estratégias em memória foram diretamente moldados pelas **três realidades físicas** extraídas do dataset oficial *dunnhumby — The Complete Journey* (8 arquivos CSV, ~847 MB totais, 2.500 domicílios ao longo de 711 dias / 102 semanas):
@@ -98,7 +98,7 @@ O Redis opera como motor de elegibilidade e camada de aceleração sob a conven�
 Datasets históricos fechados (`DAY 1..711`) são estáticos por natureza. Para demonstrar o comportamento dinâmico de tempo real exigido pela rubrica, o BasketLens opera em dois modos:
 
 <p align="center">
-  <img src="assets/arch-operational-modes.svg" alt="BasketLens 360º — Dualidade Operacional: Modo A (Batch) vs. Modo B (Event Replay Dia a Dia)" width="100%"/>
+  <img src="assets/arch-operational-modes.drawio.svg" alt="BasketLens 360º — Dualidade Operacional: Modo A (Batch) vs. Modo B (Event Replay Dia a Dia)" width="100%"/>
 </p>
 
 ### Modo A — Carga Histórica Completa (Cold Path / Batch · Notebook 02)
@@ -127,7 +127,7 @@ Avança o relógio operacional dia a dia a partir da véspera (`prepare_replay_b
 Embora MongoDB, Cassandra e Redis resolvam integralmente o perfil, a série temporal e a velocidade de checkout, um motor de **Grafos de Propriedades (Neo4j)** entraria como **sidecar analítico de recomendação e atribuição** caso o negócio demandasse **travessias de múltiplos saltos (*multi-hop traversals*)**:
 
 <p align="center">
-  <img src="assets/arch-neo4j-graph.svg" alt="BasketLens 360º — Modelo de Grafo de Propriedades no Neo4j" width="100%"/>
+  <img src="assets/arch-neo4j-graph.drawio.svg" alt="BasketLens 360º — Modelo de Grafo de Propriedades no Neo4j" width="100%"/>
 </p>
 
 #### Três Casos de Uso Ideais para o Neo4j no Varejo:
@@ -160,7 +160,7 @@ O ambiente de desenvolvimento local (Docker Compose *single-node*) possui três 
    - **Redis Cluster Operator:** Topologia de 6 pods (3 *masters* + 3 réplicas) particionada em 16.384 *hash slots*, com Sentinel Failover e política `volatile-lru`.
 
 <p align="center">
-  <img src="assets/arch-kubernetes-production.svg" alt="BasketLens 360º — Evolução Corporativa em Produção no Kubernetes" width="100%"/>
+  <img src="assets/arch-kubernetes-production.drawio.svg" alt="BasketLens 360º — Evolução Corporativa em Produção no Kubernetes" width="100%"/>
 </p>
 
 Essa arquitetura viabiliza suporte a centenas de lojas físicas e milhões de requisições por segundo, mantendo isolamento de falhas, reconciliação automática e governança GitOps de ponta a ponta.
