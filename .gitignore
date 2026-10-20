@@ -228,3 +228,4 @@ docker-data/
 .docker-volumes/
 volumes/
 
+.opencode/
