@@ -17,9 +17,9 @@ O **BasketLens 360º** implementa uma arquitetura de **Persistência Poliglota**
 
 Toda a modelagem física, o particionamento em disco e as estratégias em memória foram diretamente moldados pelas **três realidades físicas** extraídas do dataset oficial *dunnhumby — The Complete Journey* (8 arquivos CSV, ~847 MB totais, 2.500 domicílios ao longo de 711 dias / 102 semanas):
 
-### Nuance 1 — Assimetria Brutal de Volume e a Regra *Zero Full-Dataset In-Memory*
+### Nuance 1 — Assimetria Brutal de Volume e Processamento Out-of-Core
 - **A Realidade:** Dos ~808 MiB da base, **`82,15%` (663,6 MiB · 36.786.524 linhas)** pertencem exclusivamente a `causal_data.csv` (auditoria de gôndola e tabloide por loja e semana) e **`16,73%` (135,2 MiB · 2.595.732 linhas)** a `transaction_data.csv`. Juntos, somam **98,88% do volume de dados**. Os outros 6 arquivos somados não atingem 10 MiB.
-- **A Decisão de Engenharia:** Carregar esses arquivos inteiros em memória com bibliotecas relacionais convencionais causaria esgotamento de RAM (*Out-Of-Memory*). Por isso, toda a ingestão do pacote `basketlens.ingestion` e a simulação do `basketlens.replay` operam sob a regra estrita **Zero Full-Dataset In-Memory**, utilizando exclusivamente `pl.scan_csv(...).collect(engine="streaming")` e iteração em lotes `pl.read_csv_batched(..., batch_size=50_000)`.
+- **A Decisão de Engenharia:** Carregar esses arquivos inteiros em memória com bibliotecas relacionais convencionais aumentaria significativamente a pressão sobre a RAM. Por isso, a ingestão do pacote `basketlens.ingestion` e a simulação do `basketlens.replay` evitam materializar intencionalmente os CSVs brutos completos, utilizando `pl.scan_csv(...).collect(engine="streaming")` e iteração em lotes `pl.read_csv_batched(..., batch_size=50_000)`. O consumo máximo ainda depende do plano físico: joins, agregações e outras operações podem materializar intermediários.
 
 ### Nuance 2 — Cobertura Demográfica Parcial (801 vs. 2.500) e Códigos Alfanuméricos
 - **A Realidade:** Embora 2.500 famílias realizem compras ativas em `transaction_data.csv`, apenas **801 domicílios (32,04%)** possuem registro cadastral em `hh_demographic.csv`. As colunas oficiais do guia incluem `household_key`, `HOMEOWNER_DESC`, `KID_CATEGORY_DESC` e as variáveis ordinais anonimizadas `classification_1` (Faixa Etária), `classification_2` (Estado Civil), `classification_3` (Nível de Renda), `classification_4` (Tamanho do Domicílio) e `classification_5` (Composição Familiar). Além disso, o arquivo `causal_data.csv` registra posições físicas e encartes com códigos alfanuméricos (`display` contém `'0'..'9'` e `'A'`; `mailer` contém `'0'`, `'A'`, `'C'`, `'D'`, `'F'`, `'H'`, `'J'`, `'L'`, `'P'`, `'X'`, `'Z'`).
@@ -39,10 +39,9 @@ Nenhum banco de dados isolado resolve com eficiência ótima a diversidade de ca
 |:---|:---|:---|:---|
 | **Família NoSQL** | Documentos (BSON) | Colunas Largas (*Wide-Column*) | Chave-Valor em Memória RAM |
 | **Papel na Arquitetura** | **Agregado do Perfil 360º**: cadastro, indicadores RFM consolidados e 5 últimas cestas. | **Série Temporal Imutável**: histórico transacional de PDV e auditoria física de gôndola. | **Speed Layer & Cache**: elegibilidade em tempo real e cache de leituras frequentes. |
-| **Fonte da Verdade (*System of Record*)?** | **Sim**, para o perfil consolidado do cliente. | **Sim**, para o log de eventos de compras e dados causais. | **Não** (camada efêmera de aceleração e vigência). |
-| **Classificação CAP** | **CP** (*Consistency + Partition Tolerance*) | **AP** (*Availability + Partition Tolerance*) | **AP** (Baixa Latência em Memória) |
-| **Consistência Configurada** | Primário com escrita `w: 1` (ou `w: "majority"` em cluster). | **Leitura:** `ONE` (analítica)<br>**Escrita:** `LOCAL_QUORUM` (em cluster com $R + W > N$). | Consistência **Eventual** com invalidação ativa (`DEL`) e expiração temporal (`TTL`). |
-| **Racional e Trade-Off de Negócio** | Atualizações de perfil (`$inc` e `$push`) exigem atomicidade por documento para não corromper o histórico. | No PDV de supermercado, disponibilidade de escrita é inegociável (o caixa nunca para por falha de rede). | Responder a checagens de cupom em $< 0.5\text{ ms}$ no checkout é prioritário sobre consistência estrita. |
+| **Fonte da Verdade (*System of Record*)?** | **Não para os eventos brutos**; é a fonte da verdade da projeção de perfil 360º. | **Sim**, para o log de eventos de compras e dados causais no modelo atual. | **Não** (camada efêmera de aceleração e vigência). |
+| **Semântica de consistência** | Operações em um documento são atômicas; write/read concern devem ser definidos explicitamente por ambiente. | Consistência é configurável por operação; o laboratório usa RF=1, enquanto a topologia proposta usa RF=3 e `LOCAL_QUORUM`. | Cache e elegibilidade são passíveis de expiração/invalidação; não são fonte de verdade. |
+| **Racional e Trade-Off de Negócio** | A projeção denormalizada reduz joins, mas requer idempotência e reconciliação com os eventos. | O modelo prioriza consultas por partição; batches multi-partição não são tratados como transações. | A baixa latência é desejável, mas os números devem ser comprovados por benchmark no ambiente-alvo. |
 
 ---
 
@@ -58,7 +57,7 @@ A coleção `households` armazena exatamente **2.500 documentos** (1 por cliente
 4. **Computed Pattern (`behavior_summary`):** Métricas consolidadas (`total_spend`, `total_baskets`, `active_weeks`, `avg_basket_value`, `avg_weekly_spend`, `first_day`, `last_day`) são atualizadas incrementalmente via `$inc` a cada compra.
 
 #### Índices B-Tree Secundários (Zero `COLLSCAN`)
-- `idx_household_key_unique`: `{ "household_key": 1 }` (`unique: true`) — busca pontual do cliente em `0 ms` via estágio **`EXPRESS_IXSCAN`**.
+- `idx_household_key_unique`: `{ "household_key": 1 }` (`unique: true`) — busca pontual do cliente sem `COLLSCAN`; o estágio **`EXPRESS_IXSCAN`** e o tempo observado dependem da versão e do ambiente.
 - `idx_demographics_class1_class3`: `{ "demographics.classification_1": 1, "demographics.classification_3": 1 }` — acelera a projeção das 801 famílias na Pergunta 3.
 - `idx_behavior_avg_weekly_spend_desc`: `{ "behavior_summary.avg_weekly_spend": -1 }` — ordenação imediata de clientes VIP por gasto semanal médio.
 
@@ -70,7 +69,7 @@ No Cassandra, a modelagem é orientada estritamente aos padrões de leitura (*Qu
 
 | Tabela CQL | Chave de Partição (`PARTITION KEY`) | Chaves de Agrupamento (`CLUSTERING KEY`) e Ordenação | Padrão de Acesso Atendido |
 |:---|:---|:---|:---|
-| `transactions_by_household` | `(household_key)` | `week_no DESC, day DESC, basket_id DESC, product_id ASC` | **Pergunta 1 e 3:** Compras do cliente lidas em $O(1)$ a partir do topo da partição física (`LIMIT 20`). |
+| `transactions_by_household` | `(household_key)` | `week_no DESC, day DESC, basket_id DESC, product_id ASC` | **Pergunta 1 e 3:** Compras do cliente lidas em uma única partição, priorizando as linhas mais recentes (`LIMIT 20`). |
 | `transactions_by_household_product` | `(household_key, product_id)` | `day DESC, basket_id DESC` | **Histórico de Recompra:** Isola o histórico exato de um SKU específico comprado por um domicílio sem varrer a partição inteira. |
 | `sales_by_product_week` | `(product_id)` | `week_no DESC` | **Desempenho Semanal de SKU:** Curva temporal de unidades, vendas e cestas de um SKU ao longo das 102 semanas para cálculo de lift promocional. |
 | `causal_promotions_by_store_week` | `(store_id, week_no)` | `product_id ASC` | **Auditoria de Gôndola e Tabloide:** Recupera todos os produtos em destaque físico (`display_type`) ou encarte (`mailer_page`) de uma loja na semana. |
@@ -109,12 +108,12 @@ Datasets históricos fechados (`DAY 1..711`) são estáticos por natureza. Para 
 ### Modo B — Operação Contínua / Event Replay (Hot Path / Streaming Simulado · Notebook 03)
 Avança o relógio operacional dia a dia a partir da véspera (`prepare_replay_baseline(cutoff_day = 649)`), simulando `DAY = 650, 651, ..., 657` com compressão temporal `SECONDS_PER_DAY = 5s`:
 1. **Passo 1 (Redis):** Recalcula o `TTL` das campanhas ativas, expira as encerradas e processa resgates (`SREM household:{id}:coupons`).
-2. **Passo 2 (Cassandra):** Executa *append* transacional (`UNLOGGED BATCH`) das compras do dia nas tabelas `transactions_by_household` e `transactions_by_household_product`.
+2. **Passo 2 (Cassandra):** Faz o *append* das compras do dia nas tabelas `transactions_by_household` e `transactions_by_household_product`. O agrupamento usado pelo protótipo não fornece uma transação distribuída entre partições.
 3. **Passo 3 (MongoDB):** Atualiza o perfil do cliente via `UpdateOne`: incrementa `total_spend` e `total_baskets` (`$inc`) e insere novas cestas mantendo apenas 5 (`$push` com `$slice: -5`).
 4. **Passo 4 (Redis — Invalidação Ativa):** Executa `DEL profile:{id}` para todo domicílio que comprou no dia, eliminando leituras defasadas (*stale reads*).
 
 #### Ciclo Cache-Aside no Estudo de Caso John Smith (`#208`)
-- **Leitura:** `build_360_view(208)` executa `GET profile:208` no Redis. Em caso de *Cache Hit*, responde da memória RAM em **`~0.35 ms`** (**`~6.8x mais rápido`**). Em caso de *Cache Miss*, consulta o MongoDB via `EXPRESS_IXSCAN` (`0 ms`) e grava `SETEX profile:208 60 <json>`.
+- **Leitura:** `build_360_view(208)` executa `GET profile:208` no Redis. Em caso de *Cache Hit*, evita a leitura do perfil no MongoDB. Em caso de *Cache Miss*, consulta o MongoDB por `household_key` e grava `SETEX profile:208 60 <json>`. Latências e speedup devem ser reportados apenas com percentis e condições de benchmark reproduzíveis.
 - **Marco do Dia 654:** John Smith compra a cesta `41531980403` contendo o SKU `1017772` e resgata o cupom `51800000050` da Campanha 22. O cupom é baixado via `SREM`, a cesta mais antiga é expurgada de `recent_baskets` pelo `$slice: -5`, e o cache é invalidado com `DEL profile:208`.
 - **Marco do Dia 657:** Após `END_DAY = 656`, a chave `campanha:22` atinge `TTL <= 0` e expira automaticamente no Redis, deixando de ser retornada sem necessidade de *cron jobs*.
 
@@ -140,8 +139,8 @@ Embora MongoDB, Cassandra e Redis resolvam integralmente o perfil, a série temp
 
 #### Por Que o Neo4j NÃO Foi Utilizado nas 3 Perguntas Obrigatórias?
 As três perguntas obrigatórias do enunciado são problemas clássicos de:
-- **Pergunta 1:** Busca pontual por chave e fatia ordenada em partição física ($\rightarrow$ resolvido em $O(1)$ por MongoDB e Cassandra);
-- **Pergunta 2:** Pertinência em conjunto com expiração temporal ($\rightarrow$ resolvido em sub-milissegundo pelo Redis);
+- **Pergunta 1:** Busca pontual por chave e fatia ordenada em partição física ($\rightarrow$ resolvido por índice no MongoDB e consulta a uma partição no Cassandra);
+- **Pergunta 2:** Pertinência em conjunto com expiração temporal ($\rightarrow$ resolvido por conjuntos e TTL no Redis);
 - **Pergunta 3:** Agregação numérica colunar por grupo dimensional ($\rightarrow$ resolvido por leitura concorrente de partições no Cassandra com projeção indexada no MongoDB).
 
 Nenhuma das perguntas envolve caminhos de comprimento variável ou análise de vizinhança topológica. Adicionar um banco de grafos para respondê-las violaria o princípio da parcimônia arquitetural, inserindo complexidade operacional sem ganho de desempenho.
@@ -157,10 +156,16 @@ O ambiente de desenvolvimento local (Docker Compose *single-node*) possui três 
 3. **Alta Disponibilidade e Consistência Distribuída (Kubernetes Operators):**
    - **K8ssandra Operator (Apache Cassandra 5.0):** StatefulSet de 3+ nós distribuídos entre zonas de disponibilidade físicas (Multi-AZ), com `replication_factor = 3` (`RF = 3`), nível de consistência `LOCAL_QUORUM`, discos NVMe Local SSD e backup incremental contínuo no S3 via *Medusa*.
    - **MongoDB Kubernetes Operator:** ReplicaSet de 3 membros (1 Primary + 2 Secondaries) com `PodAntiAffinity`, *failover* automático em segundos e escrita `w: "majority"`.
-   - **Redis Cluster Operator:** Topologia de 6 pods (3 *masters* + 3 réplicas) particionada em 16.384 *hash slots*, com Sentinel Failover e política `volatile-lru`.
+   - **Redis Cluster Operator:** Alternativa de produção com 6 pods (3 *masters* + 3 réplicas), particionada em 16.384 *hash slots* e com failover próprio do Redis Cluster. Sentinel é uma alternativa para Redis não clusterizado e não deve ser combinado com essa topologia.
 
 <p align="center">
   <img src="assets/arch-kubernetes-production.drawio.svg" alt="BasketLens 360º — Evolução Corporativa em Produção no Kubernetes" width="100%"/>
 </p>
 
-Essa arquitetura viabiliza suporte a centenas de lojas físicas e milhões de requisições por segundo, mantendo isolamento de falhas, reconciliação automática e governança GitOps de ponta a ponta.
+Essa evolução pode suportar maior escala, desde que seja validada por testes de carga, observabilidade, reconciliação e procedimentos de restauração. O Compose atual é um ambiente local single-node; não representa alta disponibilidade nem garante milhões de requisições por segundo.
+
+### 5.3 Limites e fontes de verdade
+
+O replay atual coordena escritas sequenciais em Redis, Cassandra e MongoDB. Isso é um dual-write não atômico: uma falha entre etapas pode deixar as projeções divergentes. Em produção, um Outbox/Event Mesh deve publicar eventos com identificador idempotente, consumidores independentes, retry, DLQ e reconciliação; ele não transforma três bancos em uma transação distribuída.
+
+As afirmações de latência, throughput, uso de memória e plano de execução são evidências do ambiente de teste quando acompanhadas de hardware, versão, número de iterações, warm-up e percentis. Não são garantias intrínsecas dos bancos nem complexidades assintóticas universais.
