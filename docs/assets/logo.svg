@@ -92,7 +92,7 @@
     <!-- Eyebrow Label -->
     <text x="0" y="64" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
           font-size="10" font-weight="900" fill="#94A3B8" letter-spacing="2.5">
-      SENAC SP · BIG DATA &amp; NOSQL · The Complete Journey (dunnhumby)
+      BIG DATA &amp; NOSQL · The Complete Journey (dunnhumby)
     </text>
 
     <!-- Main Title: BasketLens -->
