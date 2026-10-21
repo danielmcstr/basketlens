@@ -19,12 +19,12 @@ Para responder à Pergunta 1 para o cliente do estudo de caso oficial do guia da
 │  build_360_view(household_key = 208)                                                            │
 │    │                                                                                            │
 │    ├──► 1. [Redis] GET profile:208                                                              │
-│    │         ├─► Cache Hit  : Retorna JSON em ~0.35 ms (source="redis", speedup ~6.8x)          │
+│    │         ├─► Cache Hit  : Retorna JSON diretamente do cache (source="redis")                │
 │    │         └─► Cache Miss : Consulta [MongoDB] db.households.find_one({household_key: 208})   │
-│    │                          via índice EXPRESS_IXSCAN (0 ms) e grava [Redis] SETEX 60s        │
+│    │                          pelo índice observado e grava [Redis] SETEX 60s                   │
 │    │                                                                                            │
 │    ├──► 2. [Cassandra] SELECT ... FROM transactions_by_household WHERE household_key = 208      │
-│    │                   LIMIT 20 (leitura O(1) no topo da partição ordenada em disco)            │
+│    │                   LIMIT 20 (leitura de uma única partição ordenada por clustering)          │
 │    │                                                                                            │
 │    └──► 3. [Redis] SMEMBERS household:208:campaigns + TTL/HGETALL (filtra TTL > 0 em RAM)       │
 └─────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -116,7 +116,7 @@ Quando o filtro inclui simultaneamente `household_key = 208` e `product_id = 101
 
 - **Plano de Execução no MongoDB (`db.households.find({"household_key": 208}).explain("executionStats")`)**:
   - `winningPlan.stage`: **`EXPRESS_IXSCAN`** sobre o índice único `idx_household_key_unique` (`{ household_key: 1 }`)
-  - `nReturned`: `1` | `totalKeysExamined`: `1` | `totalDocsExamined`: `1` | `executionTimeMillis`: `0 ms` (Zero `COLLSCAN`).
+  - `nReturned`: `1` | `totalKeysExamined`: `1` | `totalDocsExamined`: `1` | `executionTimeMillis`: `0 ms` no ambiente de teste (Zero `COLLSCAN`; o tempo não é uma garantia de produção).
 - **Benchmark Cache-Aside (`profile:208` — 15 iterações em `benchmark_cache_aside_latency`)**:
   - **Cold Cache Miss (MongoDB fallback + `SETEX` no Redis)**: `~1.05 ms` a `1.45 ms` por lookup de perfil
   - **Warm Cache Hit (`GET profile:208` direto da RAM do Redis)**: `~0.28 ms` a `0.42 ms` (**ganho de `~3.2x`** na leitura do perfil)
